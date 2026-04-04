@@ -1,23 +1,22 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
+import { colors } from '@/lib/theme';
 
 function TabIcon(props: { name: React.ComponentProps<typeof FontAwesome>['name']; color: string }) {
   return <FontAwesome size={24} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { t } = useTranslation();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.tint,
-        tabBarInactiveTintColor: colors.tabIconDefault,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: '#BDBDBD',
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
@@ -25,34 +24,34 @@ export default function TabLayout() {
         headerStyle: {
           backgroundColor: colors.card,
         },
-        headerTintColor: colors.text,
+        headerTintColor: colors.textPrimary,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Timeline',
+          title: t('tabs.timeline'),
           tabBarIcon: ({ color }) => <TabIcon name="calendar" color={color} />,
         }}
       />
       <Tabs.Screen
         name="gallery"
         options={{
-          title: 'Gallery',
+          title: t('tabs.gallery'),
           tabBarIcon: ({ color }) => <TabIcon name="photo" color={color} />,
         }}
       />
       <Tabs.Screen
         name="appointments"
         options={{
-          title: 'Appointments',
+          title: t('tabs.appointments'),
           tabBarIcon: ({ color }) => <TabIcon name="stethoscope" color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color }) => <TabIcon name="user" color={color} />,
         }}
       />

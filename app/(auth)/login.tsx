@@ -1,35 +1,62 @@
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useAuth } from '@/lib/auth';
+import { showError } from '@/lib/errorHelper';
+import { testConnection } from '@/lib/services/connectionApi';
+import { colors } from '@/lib/theme';
+import { isValidAuthEmail } from '@/lib/validators/auth';
 
 export default function LoginScreen() {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const appState = useRef(AppState.currentState);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (appState.current === 'active' && nextState.match(/inactive|background/)) {
+        setShowPassword(false);
+      }
+      appState.current = nextState;
+    });
+    return () => sub.remove();
+  }, []);
+
+  const emailTouched = email.length > 0;
+  const emailValid = isValidAuthEmail(email);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('common.error'), t('auth.fillAllFields'));
+      return;
+    }
+    if (!emailValid) {
+      Alert.alert(t('common.error'), t('auth.invalidEmail'));
       return;
     }
     setLoading(true);
     try {
       await login(email.trim().toLowerCase(), password);
-    } catch (e: any) {
-      Alert.alert('Error', e.response?.data?.message ?? 'Login failed');
+    } catch (e: unknown) {
+      showError(t('common.error'), e, t('auth.loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -37,121 +64,96 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      className="flex-1 bg-primary-soft"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.inner}>
-        <Text style={styles.emoji}>🤰</Text>
-        <Text style={styles.title}>My Pregnancy Journey</Text>
-        <Text style={styles.subtitle}>Welcome back</Text>
+      <View className="flex-1 justify-center px-[32px]">
+        <Text className="text-[64px] text-center mb-[8px]">🤰</Text>
+        <Text className="text-[28px] font-bold text-center text-text-primary mb-[4px]">{t('auth.appName')}</Text>
+        <Text className="text-[16px] text-center text-text-secondary mb-[32px]">{t('auth.welcomeBack')}</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#999"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#999"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <View
+          className="flex-row items-center bg-white rounded-[12px] border border-border"
+          style={{ marginBottom: emailTouched && !emailValid ? 4 : 12 }}
+        >
+          <TextInput
+            className="flex-1 px-[16px] py-[14px] text-[16px] text-text-primary"
+            placeholder={t('auth.email')}
+            placeholderTextColor={colors.textPlaceholder}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {emailTouched && emailValid && (
+            <FontAwesome name="check-circle" size={18} color={colors.success} style={{ paddingRight: 14 }} />
+          )}
+        </View>
+        {emailTouched && !emailValid && (
+          <View className="flex-row items-center gap-[6px] mb-[10px] px-[4px]">
+            <FontAwesome name="times-circle" size={14} color={colors.primary} />
+            <Text className="text-[13px] text-primary">{t('auth.invalidEmail')}</Text>
+          </View>
+        )}
+
+        <View className="flex-row items-center bg-white rounded-[12px] border border-border mb-3">
+          <TextInput
+            className="flex-1 px-[16px] py-[14px] text-[16px] text-text-primary"
+            placeholder={t('auth.password')}
+            placeholderTextColor={colors.textPlaceholder}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+          />
+          <Pressable className="px-[14px] py-[14px]" onPress={() => setShowPassword((v) => !v)}>
+            <FontAwesome name={showPassword ? 'eye' : 'eye-slash'} size={18} color={colors.textPlaceholder} />
+          </Pressable>
+        </View>
 
         <Pressable
-          style={[styles.button, loading && styles.buttonDisabled]}
+          className={`bg-primary rounded-[12px] py-[16px] items-center mt-[8px] ${loading ? 'opacity-70' : ''}`}
           onPress={handleLogin}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.white} />
           ) : (
-            <Text style={styles.buttonText}>Sign In</Text>
+            <Text className="text-white text-[17px] font-semibold">{t('auth.signIn')}</Text>
           )}
         </Pressable>
 
         <Link href="/(auth)/register" asChild>
-          <Pressable style={styles.linkContainer}>
-            <Text style={styles.linkText}>
-              Don&apos;t have an account? <Text style={styles.linkBold}>Sign Up</Text>
+          <Pressable className="mt-[24px] items-center">
+            <Text className="text-text-secondary text-[14px]">
+              {t('auth.noAccount')} <Text className="text-primary font-semibold">{t('auth.signUp')}</Text>
             </Text>
           </Pressable>
         </Link>
+
+        {__DEV__ && (
+          <Pressable
+            className={`mt-[32px] flex-row gap-[10px] justify-center border-2 border-primary rounded-[12px] py-[14px] items-center bg-transparent ${testing ? 'opacity-70' : ''}`}
+            onPress={async () => {
+              setTesting(true);
+              const result = await testConnection();
+              setTesting(false);
+              const titles = { ok: 'API Connected', warning: 'API Warning', error: 'API Disconnected' };
+              Alert.alert(titles[result.status], result.detail);
+            }}
+            disabled={testing}
+          >
+            {testing ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : (
+              <>
+                <FontAwesome name="plug" size={18} color={colors.primary} />
+                <Text className="text-primary text-[16px] font-semibold">Test API Connection</Text>
+              </>
+            )}
+          </Pressable>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF0F5',
-  },
-  inner: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  emoji: {
-    fontSize: 64,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    textAlign: 'center',
-    color: '#1a1a2e',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 32,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    color: '#1a1a2e',
-  },
-  button: {
-    backgroundColor: '#E91E8C',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  linkContainer: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  linkBold: {
-    color: '#E91E8C',
-    fontWeight: '600',
-  },
-});

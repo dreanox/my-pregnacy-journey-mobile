@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import api from './api';
-import type { AuthResponse, User } from './types';
+
+import {
+  fetchCurrentUser,
+  postLogin as loginRequest,
+  postLogout as logoutRequest,
+  postRegister as registerRequest,
+} from '@/lib/services/authApi';
+import type { User } from './types';
 
 interface AuthState {
   user: User | null;
@@ -34,8 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = await SecureStore.getItemAsync('auth_token');
       if (token) {
-        const { data } = await api.get('/user');
-        setState({ user: data, token, isLoading: false, isAuthenticated: true });
+        const user = await fetchCurrentUser();
+        setState({ user, token, isLoading: false, isAuthenticated: true });
       } else {
         setState((s) => ({ ...s, isLoading: false }));
       }
@@ -46,25 +52,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    const { data } = await api.post<AuthResponse>('/login', { email, password });
+    const data = await loginRequest(email, password);
     await SecureStore.setItemAsync('auth_token', data.token);
     setState({ user: data.user, token: data.token, isLoading: false, isAuthenticated: true });
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const { data } = await api.post<AuthResponse>('/register', {
-      name,
-      email,
-      password,
-      password_confirmation: password,
-    });
+    const data = await registerRequest(name, email, password);
     await SecureStore.setItemAsync('auth_token', data.token);
     setState({ user: data.user, token: data.token, isLoading: false, isAuthenticated: true });
   };
 
   const logout = async () => {
     try {
-      await api.post('/logout');
+      await logoutRequest();
     } catch {
       // ignore
     }

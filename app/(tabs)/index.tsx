@@ -1,131 +1,164 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
-  StyleSheet,
   Text,
-  TextInput,
   View,
   Modal,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import DateTimePicker, { useDefaultStyles } from 'react-native-ui-datepicker';
+import dayjs from 'dayjs';
+import 'dayjs/locale/es';
 
-import api from '@/lib/api';
-import type { Pregnancy, WeekEntry } from '@/lib/types';
+import { useTimeline } from '@/hooks/useTimeline';
+import { useTimelineWeekListScroll } from '@/hooks/useTimelineWeekListScroll';
+import {
+  TIMELINE_FLATLIST_INITIAL_NUM_RENDER,
+  TIMELINE_FLATLIST_WINDOW_SIZE,
+  TIMELINE_WEEK_COUNT,
+} from '@/lib/constants/timeline';
+import {
+  calcFromLMP,
+  formatGestationalWeekRange,
+  getGestationalWeekRange,
+} from '@/lib/gestationalWeek';
+import { colors } from '@/lib/theme';
 
 export default function TimelineScreen() {
   const router = useRouter();
-  const qc = useQueryClient();
+  const { t, i18n } = useTranslation();
+  const defaultStyles = useDefaultStyles();
   const [showNewPregnancy, setShowNewPregnancy] = useState(false);
-  const [dueDate, setDueDate] = useState('');
-
-  const { data: pregnancies, isLoading: loadingPregs } = useQuery({
-    queryKey: ['pregnancies'],
-    queryFn: async () => {
-      const { data } = await api.get<Pregnancy[]>('/pregnancies');
-      return data;
-    },
-  });
-
-  const activePregnancy = pregnancies?.find((p) => p.is_active);
-
-  const { data: weekEntries, isLoading: loadingEntries } = useQuery({
-    queryKey: ['weekEntries', activePregnancy?.id],
-    queryFn: async () => {
-      const { data } = await api.get<WeekEntry[]>(
-        `/pregnancies/${activePregnancy!.id}/week-entries`
-      );
-      return data;
-    },
-    enabled: !!activePregnancy,
-  });
-
-  const createPregnancy = useMutation({
-    mutationFn: async (payload: { due_date?: string; current_week?: number }) => {
-      const { data } = await api.post<Pregnancy>('/pregnancies', payload);
-      return data;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['pregnancies'] });
+  const [lastPeriodDate, setLastPeriodDate] = useState<string | undefined>(undefined);
+  const [openingWeek, setOpeningWeek] = useState<number | null>(null);
+  const {
+    loadingPregs,
+    activePregnancy,
+    weekEntries,
+    loadingEntries,
+    createPregnancy,
+    createWeekEntry,
+  } = useTimeline({
+    onCreateWeekEntryError: () => setOpeningWeek(null),
+    onCreatePregnancySuccess: () => {
       setShowNewPregnancy(false);
-      setDueDate('');
+      setLastPeriodDate(undefined);
     },
-    onError: () => Alert.alert('Error', 'Could not create pregnancy'),
   });
 
-  const createWeekEntry = useMutation({
-    mutationFn: async (weekNumber: number) => {
-      const { data } = await api.post<WeekEntry>(
-        `/pregnancies/${activePregnancy!.id}/week-entries`,
-        { week_number: weekNumber }
-      );
-      return data;
-    },
-    onSuccess: (entry) => {
-      qc.invalidateQueries({ queryKey: ['weekEntries'] });
-      router.push(`/week/${entry.id}` as any);
-    },
-  });
+  useFocusEffect(
+    useCallback(() => {
+      setOpeningWeek(null);
+    }, [])
+  );
 
   const currentWeek = activePregnancy?.current_week ?? 1;
-  const allWeeks = Array.from({ length: 42 }, (_, i) => i + 1);
+  const allWeeks = Array.from({ length: TIMELINE_WEEK_COUNT }, (_, i) => i + 1);
   const entryMap = new Map((weekEntries ?? []).map((e) => [e.week_number, e]));
 
+  const { weekListRef, getWeekItemLayout, onScrollToWeekIndexFailed } = useTimelineWeekListScroll({
+    activePregnancy,
+    loadingEntries,
+    currentWeek,
+    weekListLength: allWeeks.length,
+  });
+
+  const navigatingToWeek =
+    openingWeek !== null || createWeekEntry.isPending;
+
   const handleWeekPress = (weekNum: number) => {
+    if (navigatingToWeek || !activePregnancy) return;
     const existing = entryMap.get(weekNum);
+    setOpeningWeek(weekNum);
     if (existing) {
-      router.push(`/week/${existing.id}` as any);
+      router.push(`/week/${existing.id}`);
     } else {
-      createWeekEntry.mutate(weekNum);
+      createWeekEntry.mutate({ pregnancyId: activePregnancy.id, weekNumber: weekNum });
     }
   };
 
   if (loadingPregs) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#E91E8C" />
+      <View className="flex-1 justify-center items-center bg-primary-soft p-8">
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   if (!activePregnancy) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.emptyEmoji}>🤰</Text>
-        <Text style={styles.emptyTitle}>Start Your Journey</Text>
-        <Text style={styles.emptySubtitle}>Track every beautiful moment</Text>
-        <Pressable style={styles.primaryButton} onPress={() => setShowNewPregnancy(true)}>
-          <Text style={styles.primaryButtonText}>Begin Tracking</Text>
+      <View className="flex-1 justify-center items-center bg-primary-soft p-8">
+        <Text className="text-[80px] mb-4">🤰</Text>
+        <Text className="text-[26px] font-bold text-text-primary mb-2">{t('timeline.startJourney')}</Text>
+        <Text className="text-[16px] text-text-secondary mb-8">{t('timeline.trackMoments')}</Text>
+        <Pressable className="bg-primary rounded-xl py-4 px-10 items-center w-full" onPress={() => setShowNewPregnancy(true)}>
+          <Text className="text-white text-[17px] font-semibold">{t('timeline.beginTracking')}</Text>
         </Pressable>
 
         <Modal visible={showNewPregnancy} transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>New Pregnancy</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Due date (YYYY-MM-DD)"
-                placeholderTextColor="#999"
-                value={dueDate}
-                onChangeText={setDueDate}
+          <View className="flex-1 bg-overlay justify-end">
+            <View className="bg-card rounded-t-3xl p-6 pb-10">
+              <Text className="text-[22px] font-bold text-text-primary mb-1">{t('timeline.newPregnancy')}</Text>
+              <Text className="text-[14px] text-text-secondary mb-2">{t('timeline.lastPeriodDate')}</Text>
+              <DateTimePicker
+                mode="single"
+                locale="es"
+                date={lastPeriodDate}
+                onChange={(params) => {
+                  const iso = dayjs(params.date as string).format('YYYY-MM-DD');
+                  if (__DEV__) console.log('[DatePicker onChange]', iso);
+                  setLastPeriodDate(iso);
+                }}
+                styles={{
+                  ...defaultStyles,
+                  selected: { backgroundColor: colors.primary, borderRadius: 20 },
+                  selected_label: { color: colors.white, fontWeight: '600' },
+                  today: { borderWidth: 1, borderColor: colors.primary, borderRadius: 20 },
+                  today_label: { color: colors.primary },
+                  button_prev_image: { tintColor: colors.primary },
+                  button_next_image: { tintColor: colors.primary },
+                }}
               />
+              {__DEV__ && (
+                <Text className="text-[11px] text-text-placeholder text-center mt-1">
+                  Selected: {lastPeriodDate ?? 'none'}
+                </Text>
+              )}
+              {lastPeriodDate && (
+                <View className="bg-primary-soft rounded-xl p-3 mb-3 gap-1.5">
+                  <Text className="text-[14px] text-text-primary">
+                    <FontAwesome name="calendar-check-o" size={14} color={colors.primary} />{' '}
+                    {t('timeline.calculatedDueDate', {
+                      date: calcFromLMP(lastPeriodDate).dueDate.format('DD/MM/YYYY'),
+                    })}
+                  </Text>
+                  <Text className="text-[14px] text-text-primary">
+                    <FontAwesome name="heartbeat" size={14} color={colors.primary} />{' '}
+                    {t('timeline.calculatedWeek', { number: calcFromLMP(lastPeriodDate).currentWeek })}
+                  </Text>
+                </View>
+              )}
               <Pressable
-                style={styles.primaryButton}
-                onPress={() =>
+                className={`bg-primary rounded-xl py-4 px-10 items-center w-full ${!lastPeriodDate ? 'opacity-50' : ''}`}
+                onPress={() => {
+                  if (!lastPeriodDate) return;
+                  const { dueDate, currentWeek: cw } = calcFromLMP(lastPeriodDate);
                   createPregnancy.mutate({
-                    due_date: dueDate || undefined,
-                    current_week: 1,
-                  })
-                }
+                    last_period_date: lastPeriodDate,
+                    due_date: dueDate.format('YYYY-MM-DD'),
+                    current_week: cw,
+                  });
+                }}
+                disabled={!lastPeriodDate}
               >
-                <Text style={styles.primaryButtonText}>Create</Text>
+                <Text className="text-white text-[17px] font-semibold">{t('common.create')}</Text>
               </Pressable>
-              <Pressable style={styles.cancelButton} onPress={() => setShowNewPregnancy(false)}>
-                <Text style={styles.cancelText}>Cancel</Text>
+              <Pressable className="items-center mt-3" onPress={() => { setShowNewPregnancy(false); setLastPeriodDate(undefined); }}>
+                <Text className="text-text-secondary text-[16px]">{t('common.cancel')}</Text>
               </Pressable>
             </View>
           </View>
@@ -135,71 +168,104 @@ export default function TimelineScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Week {currentWeek}</Text>
+    <View className="flex-1 bg-surface">
+      <View className="bg-primary pt-4 pb-5 px-5 rounded-b-3xl">
+        <Text className="text-[28px] font-bold text-white">{t('timeline.week', { number: currentWeek })}</Text>
         {activePregnancy.due_date && (
-          <Text style={styles.headerSubtitle}>Due: {activePregnancy.due_date}</Text>
+          <Text className="text-[14px] text-white-translucent mt-1">{t('timeline.dueDate', { date: dayjs(activePregnancy.due_date).format('DD/MM/YYYY') })}</Text>
         )}
       </View>
 
       {loadingEntries ? (
-        <ActivityIndicator style={{ marginTop: 32 }} size="large" color="#E91E8C" />
+        <ActivityIndicator className="mt-8" size="large" color={colors.primary} />
       ) : (
         <FlatList
+          ref={weekListRef}
           data={allWeeks}
           keyExtractor={(item) => item.toString()}
-          contentContainerStyle={styles.list}
+          contentContainerClassName="p-4 pb-8"
+          getItemLayout={getWeekItemLayout}
+          onScrollToIndexFailed={onScrollToWeekIndexFailed}
+          initialNumToRender={TIMELINE_FLATLIST_INITIAL_NUM_RENDER}
+          windowSize={TIMELINE_FLATLIST_WINDOW_SIZE}
           renderItem={({ item: weekNum }) => {
             const entry = entryMap.get(weekNum);
             const isCurrent = weekNum === currentWeek;
             const hasData = !!entry;
+            const isOpeningThisWeek =
+              openingWeek === weekNum ||
+              (createWeekEntry.isPending &&
+                createWeekEntry.variables?.weekNumber === weekNum);
+            const weekRange = getGestationalWeekRange(weekNum, activePregnancy);
+            const weekRangeLabel = weekRange
+              ? formatGestationalWeekRange(weekRange.start, weekRange.end, i18n.language)
+              : null;
 
             return (
               <Pressable
-                style={[
-                  styles.weekCard,
-                  isCurrent && styles.weekCardCurrent,
-                  hasData && styles.weekCardFilled,
-                ]}
+                className={`flex-row items-center justify-between bg-card rounded-[14px] p-[14px] mb-2 border border-border ${isCurrent ? 'border-primary border-2 bg-primary-soft' : ''} ${hasData ? 'bg-card-alt' : ''} ${navigatingToWeek && !isOpeningThisWeek ? 'opacity-50' : ''}`}
                 onPress={() => handleWeekPress(weekNum)}
+                disabled={navigatingToWeek}
               >
-                <View style={styles.weekLeft}>
+                <View className="flex-row items-center flex-1">
                   <View
-                    style={[styles.weekBadge, isCurrent && styles.weekBadgeCurrent]}
+                    className={`w-10 h-10 rounded-full bg-surface-muted justify-center items-center mr-3 ${isCurrent ? 'bg-primary' : ''}`}
                   >
                     <Text
-                      style={[styles.weekBadgeText, isCurrent && styles.weekBadgeTextCurrent]}
+                      className={`text-[15px] font-semibold text-text-secondary ${isCurrent ? 'text-white' : ''}`}
                     >
                       {weekNum}
                     </Text>
                   </View>
-                  <View style={styles.weekInfo}>
-                    <Text style={[styles.weekTitle, isCurrent && styles.weekTitleCurrent]}>
-                      Week {weekNum}
+                  <View className="flex-1">
+                    <Text className={`text-[16px] font-semibold text-text-primary ${isCurrent ? 'text-primary' : ''}`}>
+                      {t('timeline.week', { number: weekNum })}
                     </Text>
+                    {weekRangeLabel && (
+                      <Text
+                        className={`text-[12px] mt-0.5 ${isCurrent ? 'text-primary opacity-90' : 'text-text-muted'}`}
+                        numberOfLines={1}
+                      >
+                        <FontAwesome name="calendar-o" size={11} color={isCurrent ? colors.primary : colors.iconMuted} />{' '}
+                        {weekRangeLabel}
+                      </Text>
+                    )}
                     {entry && (
-                      <View style={styles.weekMeta}>
+                      <View className="flex-row flex-wrap mt-1 gap-x-3 gap-y-1">
                         {entry.weight && (
-                          <Text style={styles.metaText}>
-                            <FontAwesome name="balance-scale" size={11} /> {entry.weight} kg
+                          <Text className="text-[12px] text-text-muted">
+                            <FontAwesome name="balance-scale" size={11} /> {entry.weight} {t('common.kg')}
                           </Text>
                         )}
                         {(entry.symptoms?.length ?? 0) > 0 && (
-                          <Text style={styles.metaText}>
+                          <Text className="text-[12px] text-text-muted">
                             <FontAwesome name="heartbeat" size={11} /> {entry.symptoms!.length}
                           </Text>
                         )}
                         {(entry.photos?.length ?? 0) > 0 && (
-                          <Text style={styles.metaText}>
+                          <Text className="text-[12px] text-text-muted">
                             <FontAwesome name="camera" size={11} /> {entry.photos!.length}
+                          </Text>
+                        )}
+                        {(entry.notes?.length ?? 0) > 0 && (
+                          <Text className="text-[12px] text-text-muted">
+                            <FontAwesome name="book" size={11} /> {entry.notes!.length}
+                          </Text>
+                        )}
+                        {(entry.appointments?.length ?? 0) > 0 && (
+                          <Text className="text-[12px] text-text-muted">
+                            <FontAwesome name="calendar-check-o" size={11} /> {entry.appointments!.length}
                           </Text>
                         )}
                       </View>
                     )}
                   </View>
                 </View>
-                <FontAwesome name="chevron-right" size={14} color="#ccc" />
+                {isOpeningThisWeek ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <FontAwesome name="chevron-right" size={14} color={colors.iconMuted} />
+                )}
               </Pressable>
             );
           }}
@@ -208,94 +274,3 @@ export default function TimelineScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAFAFA' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF0F5', padding: 32 },
-  header: {
-    backgroundColor: '#E91E8C',
-    paddingTop: 16,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  headerTitle: { fontSize: 28, fontWeight: '700', color: '#fff' },
-  headerSubtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
-  list: { padding: 16, paddingBottom: 32 },
-  weekCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-  },
-  weekCardCurrent: {
-    borderColor: '#E91E8C',
-    borderWidth: 2,
-    backgroundColor: '#FFF0F5',
-  },
-  weekCardFilled: {
-    backgroundColor: '#FEFEFE',
-  },
-  weekLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  weekBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  weekBadgeCurrent: { backgroundColor: '#E91E8C' },
-  weekBadgeText: { fontSize: 15, fontWeight: '600', color: '#666' },
-  weekBadgeTextCurrent: { color: '#fff' },
-  weekInfo: { flex: 1 },
-  weekTitle: { fontSize: 16, fontWeight: '600', color: '#1a1a2e' },
-  weekTitleCurrent: { color: '#E91E8C' },
-  weekMeta: { flexDirection: 'row', marginTop: 4, gap: 12 },
-  metaText: { fontSize: 12, color: '#888' },
-  emptyEmoji: { fontSize: 80, marginBottom: 16 },
-  emptyTitle: { fontSize: 26, fontWeight: '700', color: '#1a1a2e', marginBottom: 8 },
-  emptySubtitle: { fontSize: 16, color: '#666', marginBottom: 32 },
-  primaryButton: {
-    backgroundColor: '#E91E8C',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    alignItems: 'center',
-    width: '100%',
-  },
-  primaryButtonText: { color: '#fff', fontSize: 17, fontWeight: '600' },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 40,
-  },
-  modalTitle: { fontSize: 22, fontWeight: '700', color: '#1a1a2e', marginBottom: 20 },
-  input: {
-    backgroundColor: '#F9F9F9',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    color: '#1a1a2e',
-  },
-  cancelButton: { alignItems: 'center', marginTop: 12 },
-  cancelText: { color: '#666', fontSize: 16 },
-});

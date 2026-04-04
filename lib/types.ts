@@ -90,3 +90,16 @@ export const DEFAULT_SYMPTOMS = [
   'Cramps',
   'Mood swings',
 ] as const;
+
+export const SYMPTOM_I18N_KEYS: Record<string, string> = {
+  'Nausea': 'symptoms.nausea',
+  'Dizziness': 'symptoms.dizziness',
+  'Back pain': 'symptoms.backPain',
+  'Fatigue': 'symptoms.fatigue',
+  'Headache': 'symptoms.headache',
+  'Swelling': 'symptoms.swelling',
+  'Heartburn': 'symptoms.heartburn',
+  'Insomnia': 'symptoms.insomnia',
+  'Cramps': 'symptoms.cramps',
+  'Mood swings': 'symptoms.moodSwings',
+};

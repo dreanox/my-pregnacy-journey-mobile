@@ -1,41 +1,34 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useQuery } from '@tanstack/react-query';
 import {
   ActivityIndicator,
   FlatList,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
-import api from '@/lib/api';
-import type { Appointment } from '@/lib/types';
+import { useUpcomingAppointments } from '@/hooks/useUpcomingAppointments';
+import { formatAppointmentDateTime } from '@/lib/utils/formatAppointment';
+import { colors } from '@/lib/theme';
 
 export default function AppointmentsScreen() {
-  const { data: appointments, isLoading } = useQuery({
-    queryKey: ['appointments-upcoming'],
-    queryFn: async () => {
-      const { data } = await api.get<Appointment[]>('/appointments/upcoming');
-      return data;
-    },
-  });
+  const { t, i18n } = useTranslation();
+  const { data: appointments, isPending: isLoading } = useUpcomingAppointments();
 
   if (isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#E91E8C" />
+      <View className="flex-1 justify-center items-center p-8 bg-surface">
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   if (!appointments?.length) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.emptyEmoji}>🏥</Text>
-        <Text style={styles.emptyTitle}>No Upcoming Appointments</Text>
-        <Text style={styles.emptySubtitle}>
-          Add appointments from your weekly entries
-        </Text>
+      <View className="flex-1 justify-center items-center p-8 bg-surface">
+        <Text className="text-[64px] mb-4">🏥</Text>
+        <Text className="text-[22px] font-bold text-text-primary mb-2">{t('appointments.noUpcoming')}</Text>
+        <Text className="text-sm text-text-muted text-center">{t('appointments.addFromWeekly')}</Text>
       </View>
     );
   }
@@ -44,26 +37,32 @@ export default function AppointmentsScreen() {
     <FlatList
       data={appointments}
       keyExtractor={(item) => item.id.toString()}
-      contentContainerStyle={styles.list}
+      contentContainerClassName="p-4"
       renderItem={({ item }) => (
-        <View style={styles.card}>
-          <View style={styles.dateContainer}>
-            <Text style={styles.dateDay}>
+        <View className="flex-row bg-card rounded-[14px] p-4 mb-2.5 border border-border">
+          <View className="w-[52px] min-h-[52px] rounded-xl bg-primary-soft justify-center items-center mr-[14px] py-1">
+            <Text className="text-xl font-bold text-primary">
               {new Date(item.appointment_date).getDate()}
             </Text>
-            <Text style={styles.dateMonth}>
-              {new Date(item.appointment_date).toLocaleString('en', { month: 'short' })}
+            <Text className="text-[11px] text-primary font-semibold uppercase">
+              {new Date(item.appointment_date).toLocaleDateString(i18n.language, { month: 'short' })}
+            </Text>
+            <Text className="text-[10px] text-primary font-medium mt-0.5">
+              {new Date(item.appointment_date).toLocaleTimeString(i18n.language, { timeStyle: 'short' })}
             </Text>
           </View>
-          <View style={styles.cardInfo}>
+          <View className="flex-1">
+            <Text className="text-[14px] font-semibold text-text-primary mb-1">
+              {formatAppointmentDateTime(item.appointment_date, i18n.language)}
+            </Text>
             {item.doctor_name && (
-              <Text style={styles.doctorName}>
+              <Text className="text-base font-semibold text-text-primary mb-1">
                 <FontAwesome name="user-md" size={14} /> {item.doctor_name}
               </Text>
             )}
-            {item.notes && <Text style={styles.notes} numberOfLines={2}>{item.notes}</Text>}
+            {item.notes && <Text className="text-[13px] text-text-secondary mb-1" numberOfLines={2}>{item.notes}</Text>}
             {item.week_entry && (
-              <Text style={styles.weekTag}>Week {item.week_entry.week_number}</Text>
+              <Text className="text-xs text-primary font-medium">{t('appointments.week', { number: item.week_entry.week_number })}</Text>
             )}
           </View>
         </View>
@@ -71,35 +70,3 @@ export default function AppointmentsScreen() {
     />
   );
 }
-
-const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, backgroundColor: '#FAFAFA' },
-  emptyEmoji: { fontSize: 64, marginBottom: 16 },
-  emptyTitle: { fontSize: 22, fontWeight: '700', color: '#1a1a2e', marginBottom: 8 },
-  emptySubtitle: { fontSize: 14, color: '#888', textAlign: 'center' },
-  list: { padding: 16 },
-  card: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-  },
-  dateContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
-    backgroundColor: '#FFF0F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  dateDay: { fontSize: 20, fontWeight: '700', color: '#E91E8C' },
-  dateMonth: { fontSize: 11, color: '#E91E8C', fontWeight: '600', textTransform: 'uppercase' },
-  cardInfo: { flex: 1 },
-  doctorName: { fontSize: 16, fontWeight: '600', color: '#1a1a2e', marginBottom: 4 },
-  notes: { fontSize: 13, color: '#666', marginBottom: 4 },
-  weekTag: { fontSize: 12, color: '#E91E8C', fontWeight: '500' },
-});
