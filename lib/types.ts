@@ -3,6 +3,12 @@ export interface User {
   name: string;
   email: string;
   created_at: string;
+  accepted_terms_at?: string | null;
+  accepted_privacy_at?: string | null;
+  legal_terms_version?: string | null;
+  legal_privacy_version?: string | null;
+  accepted_adult?: boolean;
+  accepted_at?: string | null;
 }
 
 export interface Pregnancy {
@@ -68,6 +74,14 @@ export interface Appointment {
   id: number;
   week_entry_id: number;
   appointment_date: string;
+  /** Minutos antes de la cita (5–120); null = sin recordatorio push/local sincronizado. */
+  reminder_minutes_before?: number | null;
+  /** Fecha/hora tal como la vio la usuaria al guardar (para el texto del push `:time`). */
+  reminder_display_time?: string | null;
+  /** Idioma de plantilla del push al guardar (`es` | `en`). */
+  reminder_locale?: 'es' | 'en' | null;
+  /** Si existe, el recordatorio ya se consideró entregado (push o ack local). */
+  reminder_notified_at?: string | null;
   doctor_name: string | null;
   notes: string | null;
   week_entry?: { id: number; week_number: number };

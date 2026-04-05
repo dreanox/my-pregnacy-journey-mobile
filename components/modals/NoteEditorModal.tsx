@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CharacterLimitNotice } from '@/components/CharacterLimitNotice';
 import { colors } from '@/lib/theme';
 
 export type NoteEditorModalProps = {
@@ -23,6 +24,8 @@ export type NoteEditorModalProps = {
   draft: string;
   onChangeDraft: (text: string) => void;
   placeholder?: string;
+  /** When set, input is capped and a character counter is shown. */
+  maxLength?: number;
   onClose: () => void;
   onSave: () => void;
   saving: boolean;
@@ -39,6 +42,7 @@ export function NoteEditorModal({
   draft,
   onChangeDraft,
   placeholder,
+  maxLength,
   onClose,
   onSave,
   saving,
@@ -106,7 +110,16 @@ export function NoteEditorModal({
               placeholderTextColor={colors.textPlaceholder}
               value={draft}
               onChangeText={onChangeDraft}
+              maxLength={maxLength}
             />
+            {maxLength != null ? (
+              <View className="px-4 pb-2">
+                <Text className="text-[12px] text-text-muted text-right mb-1">
+                  {draft.length}/{maxLength}
+                </Text>
+                <CharacterLimitNotice currentLength={draft.length} maxLength={maxLength} />
+              </View>
+            ) : null}
           </ScrollView>
         </KeyboardAvoidingView>
       </View>

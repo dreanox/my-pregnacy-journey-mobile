@@ -2,6 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 import { getApiBaseUrl } from '@/lib/constants/network';
+import { notifySessionInvalidated } from '@/lib/sessionInvalidation';
 
 const api = axios.create({
   baseURL: getApiBaseUrl(),
@@ -25,6 +26,7 @@ api.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       await SecureStore.deleteItemAsync('auth_token');
+      notifySessionInvalidated();
     }
     return Promise.reject(error);
   }

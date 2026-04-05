@@ -4,7 +4,10 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { CharacterLimitNotice } from '@/components/CharacterLimitNotice';
 import { useInvalidateWeekEntry } from '@/hooks/useInvalidateWeekEntry';
+import { CONTENT_LIMITS } from '@/lib/constants/contentLimits';
+import { showError } from '@/lib/errorHelper';
 import { putWeekEntrySymptoms } from '@/lib/services/weekEntry';
 import { DEFAULT_SYMPTOMS, SYMPTOM_I18N_KEYS } from '@/lib/types';
 import type { WeekEntry } from '@/lib/types';
@@ -14,9 +17,10 @@ import { isPresetSymptom } from '@/lib/utils/symptoms';
 export type SymptomsSectionProps = {
   entry: WeekEntry;
   weekEntryRouteId: string;
+  readOnly?: boolean;
 };
 
-export function SymptomsSection({ entry, weekEntryRouteId }: SymptomsSectionProps) {
+export function SymptomsSection({ entry, weekEntryRouteId, readOnly = false }: SymptomsSectionProps) {
   const { t } = useTranslation();
   const invalidate = useInvalidateWeekEntry(weekEntryRouteId);
   const [editing, setEditing] = useState(false);
@@ -40,6 +44,7 @@ export function SymptomsSection({ entry, weekEntryRouteId }: SymptomsSectionProp
       invalidate();
       setEditing(false);
     },
+    onError: (e) => showError(t('common.error'), e, t('week.symptomSyncFailed')),
   });
 
   const toggleSymptom = (name: string) => {
@@ -52,10 +57,11 @@ export function SymptomsSection({ entry, weekEntryRouteId }: SymptomsSectionProp
   };
 
   const addCustom = () => {
-    if (custom.trim()) {
-      setSelected((prev) => new Set(prev).add(custom.trim()));
-      setCustom('');
-    }
+    const name = custom.trim();
+    if (!name) return;
+    if (name.length > CONTENT_LIMITS.customSymptomNameMax) return;
+    setSelected((prev) => new Set(prev).add(name));
+    setCustom('');
   };
 
   return (
@@ -66,11 +72,11 @@ export function SymptomsSection({ entry, weekEntryRouteId }: SymptomsSectionProp
             <FontAwesome name="heartbeat" size={16} /> {t('week.symptoms')}
           </Text>
         </View>
-        {!editing ? (
+        {!readOnly && !editing ? (
           <Pressable onPress={() => setEditing(true)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} className="p-1">
             <FontAwesome name="pencil" size={16} color={colors.primary} />
           </Pressable>
-        ) : (
+        ) : !readOnly && editing ? (
           <Pressable
             onPress={() => sync.mutate()}
             disabled={sync.isPending}
@@ -83,9 +89,9 @@ export function SymptomsSection({ entry, weekEntryRouteId }: SymptomsSectionProp
               <Text className="text-primary font-semibold">{t('common.done')}</Text>
             )}
           </Pressable>
-        )}
+        ) : null}
       </View>
-      {editing ? (
+      {editing && !readOnly ? (
         <View style={{ gap: 20 }}>
           <View className="flex-row flex-wrap gap-2">
             {DEFAULT_SYMPTOMS.map((s) => (
@@ -111,17 +117,25 @@ export function SymptomsSection({ entry, weekEntryRouteId }: SymptomsSectionProp
                 </Pressable>
               ))}
           </View>
-          <View className="flex-row items-end gap-2">
-            <TextInput
-              className="flex-1 bg-card-subtle rounded-[10px] px-[14px] py-3 text-[15px] border border-border text-text-primary min-h-[48px]"
-              value={custom}
-              onChangeText={setCustom}
-              placeholder={t('week.addCustomSymptom')}
-              placeholderTextColor={colors.textPlaceholder}
+          <View>
+            <View className="flex-row items-end gap-2">
+              <TextInput
+                className="flex-1 bg-card-subtle rounded-[10px] px-[14px] py-3 text-[15px] border border-border text-text-primary min-h-[48px]"
+                value={custom}
+                onChangeText={setCustom}
+                placeholder={t('week.addCustomSymptom')}
+                placeholderTextColor={colors.textPlaceholder}
+                maxLength={CONTENT_LIMITS.customSymptomNameMax}
+              />
+              <Pressable className="bg-primary rounded-[10px] px-4 py-3" onPress={addCustom}>
+                <Text className="text-white font-semibold text-[14px]">{t('common.add')}</Text>
+              </Pressable>
+            </View>
+            <CharacterLimitNotice
+              currentLength={custom.length}
+              maxLength={CONTENT_LIMITS.customSymptomNameMax}
+              className="mt-2"
             />
-            <Pressable className="bg-primary rounded-[10px] px-4 py-3" onPress={addCustom}>
-              <Text className="text-white font-semibold text-[14px]">{t('common.add')}</Text>
-            </Pressable>
           </View>
         </View>
       ) : (

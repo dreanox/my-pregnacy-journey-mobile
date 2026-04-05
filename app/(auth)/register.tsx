@@ -1,5 +1,6 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Link } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -8,29 +9,40 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { MedicalDisclaimer } from '@/components/MedicalDisclaimer';
 import { useAuth } from '@/lib/auth';
 import { AUTH_LIMITS } from '@/lib/constants/auth';
+import { getApiOrigin } from '@/lib/constants/network';
 import { showError } from '@/lib/errorHelper';
 import { colors } from '@/lib/theme';
 import { isValidAuthEmail } from '@/lib/validators/auth';
 
 export default function RegisterScreen() {
   const { register } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
+  const [confirmedAdult, setConfirmedAdult] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const appState = useRef(AppState.currentState);
+
+  const legalLang = i18n.language?.toLowerCase().startsWith('en') ? 'en' : 'es';
+
+  const openLegalPage = (path: '/terms' | '/privacy') => {
+    void WebBrowser.openBrowserAsync(`${getApiOrigin()}${path}?lang=${legalLang}`);
+  };
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState) => {
@@ -54,7 +66,13 @@ export default function RegisterScreen() {
     name.trim().length > 0 &&
     emailValid &&
     passwordLongEnough &&
-    passwordsMatch;
+    passwordsMatch &&
+    acceptedLegal &&
+    confirmedAdult;
+
+  const formFieldsReady =
+    name.trim().length > 0 && emailValid && passwordLongEnough && passwordsMatch;
+  const showConsentReminder = formFieldsReady && (!acceptedLegal || !confirmedAdult);
 
   const handleRegister = async () => {
     if (!name || !email || !password) {
@@ -73,9 +91,17 @@ export default function RegisterScreen() {
       Alert.alert(t('common.error'), t('auth.passwordsDoNotMatch'));
       return;
     }
+    if (!acceptedLegal) {
+      Alert.alert(t('common.error'), t('auth.mustAcceptLegal'));
+      return;
+    }
+    if (!confirmedAdult) {
+      Alert.alert(t('common.error'), t('auth.mustConfirmAdult'));
+      return;
+    }
     setLoading(true);
     try {
-      await register(name.trim(), email.trim().toLowerCase(), password);
+      await register(name.trim(), email.trim().toLowerCase(), password, true, true);
     } catch (e: unknown) {
       showError(t('common.error'), e, t('auth.registrationFailed'));
     } finally {
@@ -88,7 +114,12 @@ export default function RegisterScreen() {
       className="flex-1 bg-primary-soft"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View className="flex-1 justify-center px-[32px]">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="grow px-[32px] pb-[32px] pt-[24px]"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <Text className="text-[64px] text-center mb-[8px]">🤰</Text>
         <Text className="text-[28px] font-bold text-center text-text-primary mb-[4px]">{t('auth.createAccount')}</Text>
         <Text className="text-[16px] text-center text-text-secondary mb-[32px]">{t('auth.startTracking')}</Text>
@@ -179,6 +210,81 @@ export default function RegisterScreen() {
           </View>
         )}
 
+        <View className="mb-[16px] mt-[8px]">
+          <Text className="mb-[8px] text-[13px] font-semibold uppercase tracking-wide text-text-secondary">
+            {t('auth.legalConsentSectionTitle')}
+          </Text>
+          <View className="rounded-[12px] border border-border bg-white p-[14px]">
+            <View className="flex-row items-start gap-[12px]">
+              <Pressable
+                onPress={() => setAcceptedLegal((v) => !v)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: acceptedLegal }}
+                accessibilityLabel={t('auth.legalCheckboxA11y')}
+                hitSlop={8}
+                className="pt-[2px]"
+              >
+                <View
+                  className={`h-[24px] w-[24px] rounded-[6px] border-2 items-center justify-center ${
+                    acceptedLegal ? 'border-primary bg-primary' : 'border-border bg-white'
+                  }`}
+                >
+                  {acceptedLegal ? <FontAwesome name="check" size={14} color={colors.white} /> : null}
+                </View>
+              </Pressable>
+              <View className="min-w-0 flex-1 flex-row flex-wrap items-center">
+                <Text className="text-[14px] leading-[22px] text-text-primary">{t('auth.legalConsentPrefix')}</Text>
+                <Pressable onPress={() => openLegalPage('/terms')} hitSlop={4}>
+                  <Text className="text-[14px] leading-[22px] font-semibold text-primary underline">
+                    {t('auth.legalTermsLink')}
+                  </Text>
+                </Pressable>
+                <Text className="text-[14px] leading-[22px] text-text-primary">{t('auth.legalConsentMiddle')}</Text>
+                <Pressable onPress={() => openLegalPage('/privacy')} hitSlop={4}>
+                  <Text className="text-[14px] leading-[22px] font-semibold text-primary underline">
+                    {t('auth.legalPrivacyLink')}
+                  </Text>
+                </Pressable>
+                <Text className="text-[14px] leading-[22px] text-text-primary">{t('auth.legalConsentSuffix')}</Text>
+              </View>
+            </View>
+            <Text className="mt-[10px] text-[12px] leading-[18px] text-text-secondary">{t('auth.legalConsentRequiredNote')}</Text>
+          </View>
+
+          <Text className="mb-[8px] mt-[16px] text-[13px] font-semibold uppercase tracking-wide text-text-secondary">
+            {t('auth.adultConsentSectionTitle')}
+          </Text>
+          <View className="rounded-[12px] border border-border bg-white p-[14px]">
+            <View className="flex-row items-start gap-[12px]">
+              <Pressable
+                onPress={() => setConfirmedAdult((v) => !v)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: confirmedAdult }}
+                accessibilityLabel={t('auth.adultCheckboxA11y')}
+                hitSlop={8}
+                className="pt-[2px]"
+              >
+                <View
+                  className={`h-[24px] w-[24px] rounded-[6px] border-2 items-center justify-center ${
+                    confirmedAdult ? 'border-primary bg-primary' : 'border-border bg-white'
+                  }`}
+                >
+                  {confirmedAdult ? <FontAwesome name="check" size={14} color={colors.white} /> : null}
+                </View>
+              </Pressable>
+              <Text className="min-w-0 flex-1 text-[14px] leading-[22px] text-text-primary">{t('auth.confirmAdultLabel')}</Text>
+            </View>
+            <Text className="mt-[10px] text-[12px] leading-[18px] text-text-secondary">{t('auth.adultConsentRequiredNote')}</Text>
+          </View>
+
+          {showConsentReminder ? (
+            <View className="mt-[10px] flex-row items-start gap-[6px] px-[2px]">
+              <FontAwesome name="info-circle" size={14} color={colors.primary} style={{ marginTop: 2 }} />
+              <Text className="flex-1 text-[13px] leading-[19px] text-primary">{t('auth.legalAcceptToContinue')}</Text>
+            </View>
+          ) : null}
+        </View>
+
         <Pressable
           className={`bg-primary rounded-[12px] py-[16px] items-center mt-[8px] ${!canSubmit || loading ? 'opacity-70' : ''}`}
           onPress={handleRegister}
@@ -191,14 +297,16 @@ export default function RegisterScreen() {
           )}
         </Pressable>
 
+        <MedicalDisclaimer variant="inline" className="mt-6 px-1" />
+
         <Link href="/(auth)/login" asChild>
-          <Pressable className="mt-[24px] items-center">
+          <Pressable className="mt-[20px] items-center">
             <Text className="text-text-secondary text-[14px]">
               {t('auth.hasAccount')} <Text className="text-primary font-semibold">{t('auth.signIn')}</Text>
             </Text>
           </Pressable>
         </Link>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

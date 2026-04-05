@@ -16,6 +16,10 @@ export default function ProfileLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="pregnancies" options={{ title: t('profile.myPregnancies') }} />
+      <Stack.Screen name="pregnancy/[pregnancyId]" options={{ title: t('profile.pregnancyArchiveTitle') }} />
+      <Stack.Screen name="suggestions" options={{ title: t('profile.suggestions') }} />
+      <Stack.Screen name="complaints" options={{ title: t('profile.complaints') }} />
       <Stack.Screen name="settings" options={{ title: t('profile.settings') }} />
       <Stack.Screen name="about" options={{ title: t('profile.about') }} />
     </Stack>

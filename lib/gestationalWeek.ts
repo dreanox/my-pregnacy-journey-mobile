@@ -4,11 +4,12 @@ import 'dayjs/locale/es';
 import 'dayjs/locale/en';
 
 import { TIMELINE_WEEK_COUNT } from '@/lib/constants/timeline';
+import { parseCalendarDateFromApi } from '@/lib/date/apiDates';
 import type { Pregnancy } from '@/lib/types';
 
 /** From LMP string (YYYY-MM-DD): EDD (Naegele +280d) and current gestational week (1…TIMELINE_WEEK_COUNT) as used on the timeline. */
 export function calcFromLMP(lmp: string) {
-  const d = dayjs(lmp);
+  const d = parseCalendarDateFromApi(lmp) ?? dayjs(lmp);
   const dueDate = d.add(280, 'day');
   const currentWeek = Math.max(
     1,
@@ -20,10 +21,12 @@ export function calcFromLMP(lmp: string) {
 /** LMP (first day of last menstrual period), derived from stored pregnancy fields. */
 export function getLmpDay(pregnancy: Pregnancy): Dayjs | null {
   if (pregnancy.last_period_date) {
-    return dayjs(pregnancy.last_period_date).startOf('day');
+    const d = parseCalendarDateFromApi(pregnancy.last_period_date);
+    return d ? d.startOf('day') : null;
   }
   if (pregnancy.due_date) {
-    return dayjs(pregnancy.due_date).subtract(280, 'day').startOf('day');
+    const d = parseCalendarDateFromApi(pregnancy.due_date);
+    return d ? d.subtract(280, 'day').startOf('day') : null;
   }
   return null;
 }

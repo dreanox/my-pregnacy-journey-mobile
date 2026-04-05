@@ -1,5 +1,5 @@
 import api from '@/lib/api';
-import type { Pregnancy, WeekEntry } from '@/lib/types';
+import type { Appointment, Pregnancy, WeekEntry } from '@/lib/types';
 
 export type CreatePregnancyPayload = {
   last_period_date?: string;
@@ -14,6 +14,21 @@ export async function fetchPregnancies(): Promise<Pregnancy[]> {
 
 export async function createPregnancy(payload: CreatePregnancyPayload): Promise<Pregnancy> {
   const { data } = await api.post<Pregnancy>('/pregnancies', payload);
+  return data;
+}
+
+export type UpdatePregnancyPayload = {
+  due_date?: string | null;
+  last_period_date?: string | null;
+  current_week?: number;
+  is_active?: boolean;
+};
+
+export async function updatePregnancy(
+  pregnancyId: number,
+  payload: UpdatePregnancyPayload
+): Promise<Pregnancy> {
+  const { data } = await api.put<Pregnancy>(`/pregnancies/${pregnancyId}`, payload);
   return data;
 }
 
@@ -101,9 +116,36 @@ export async function deleteWeekPhoto(weekEntryId: number, photoId: number): Pro
 
 export async function postWeekAppointment(
   weekEntryId: number,
-  body: { appointment_date: string; doctor_name: string | null; notes: string | null }
-): Promise<void> {
-  await api.post(`/week-entries/${weekEntryId}/appointments`, body);
+  body: {
+    appointment_date: string;
+    doctor_name: string | null;
+    notes: string | null;
+    reminder_minutes_before?: number | null;
+    reminder_display_time?: string | null;
+    reminder_locale?: 'es' | 'en' | null;
+  }
+): Promise<Appointment> {
+  const { data } = await api.post<Appointment>(`/week-entries/${weekEntryId}/appointments`, body);
+  return data;
+}
+
+export async function putWeekAppointment(
+  weekEntryId: number,
+  appointmentId: number,
+  body: {
+    appointment_date: string;
+    doctor_name: string | null;
+    notes: string | null;
+    reminder_minutes_before?: number | null;
+    reminder_display_time?: string | null;
+    reminder_locale?: 'es' | 'en' | null;
+  }
+): Promise<Appointment> {
+  const { data } = await api.put<Appointment>(
+    `/week-entries/${weekEntryId}/appointments/${appointmentId}`,
+    body
+  );
+  return data;
 }
 
 export async function deleteWeekAppointment(weekEntryId: number, appointmentId: number): Promise<void> {

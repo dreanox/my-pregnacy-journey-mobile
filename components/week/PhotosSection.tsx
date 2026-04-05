@@ -13,6 +13,8 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { useInvalidateWeekEntry } from '@/hooks/useInvalidateWeekEntry';
+import { CONTENT_LIMITS } from '@/lib/constants/contentLimits';
+import { showError } from '@/lib/errorHelper';
 import { queryKeys } from '@/lib/queryKeys';
 import { deleteWeekPhoto, postWeekPhoto } from '@/lib/services/weekEntry';
 import type { WeekEntry } from '@/lib/types';
@@ -23,9 +25,10 @@ import { resolvePhotoDisplayUrl } from '@/lib/utils/photoUrl';
 export type PhotosSectionProps = {
   entry: WeekEntry;
   weekEntryRouteId: string;
+  readOnly?: boolean;
 };
 
-export function PhotosSection({ entry, weekEntryRouteId }: PhotosSectionProps) {
+export function PhotosSection({ entry, weekEntryRouteId, readOnly = false }: PhotosSectionProps) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const invalidate = useInvalidateWeekEntry(weekEntryRouteId);
@@ -41,6 +44,7 @@ export function PhotosSection({ entry, weekEntryRouteId }: PhotosSectionProps) {
       invalidate();
       qc.invalidateQueries({ queryKey: queryKeys.gallery.all });
     },
+    onError: (e) => showError(t('common.error'), e, t('week.photoUploadFailed')),
   });
 
   const deletePhoto = useMutation({
@@ -51,7 +55,18 @@ export function PhotosSection({ entry, weekEntryRouteId }: PhotosSectionProps) {
     },
   });
 
+  const photoCount = entry.photos?.length ?? 0;
+
+  const ensureCanAddPhoto = () => {
+    if (photoCount >= CONTENT_LIMITS.photosPerWeekMax) {
+      Alert.alert(t('common.error'), t('week.photosPerWeekLimit'));
+      return false;
+    }
+    return true;
+  };
+
   const pickImage = async () => {
+    if (!ensureCanAddPhoto()) return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.8,
@@ -64,6 +79,7 @@ export function PhotosSection({ entry, weekEntryRouteId }: PhotosSectionProps) {
   };
 
   const takePhoto = async () => {
+    if (!ensureCanAddPhoto()) return;
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
       Alert.alert(t('week.permissionNeeded'), t('week.cameraPermission'));
@@ -87,14 +103,16 @@ export function PhotosSection({ entry, weekEntryRouteId }: PhotosSectionProps) {
             <FontAwesome name="camera" size={16} /> {t('week.photos')}
           </Text>
         </View>
-        <View className="flex-row items-center gap-2">
-          <Pressable onPress={takePhoto} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} className="mr-2 p-1">
-            <FontAwesome name="camera" size={18} color={colors.primary} />
-          </Pressable>
-          <Pressable onPress={pickImage} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} className="p-1">
-            <FontAwesome name="image" size={18} color={colors.primary} />
-          </Pressable>
-        </View>
+        {!readOnly && (
+          <View className="flex-row items-center gap-2">
+            <Pressable onPress={takePhoto} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} className="mr-2 p-1">
+              <FontAwesome name="camera" size={18} color={colors.primary} />
+            </Pressable>
+            <Pressable onPress={pickImage} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} className="p-1">
+              <FontAwesome name="image" size={18} color={colors.primary} />
+            </Pressable>
+          </View>
+        )}
       </View>
       {upload.isPending && (
         <ActivityIndicator className="my-2" color={colors.primary} />
@@ -107,17 +125,19 @@ export function PhotosSection({ entry, weekEntryRouteId }: PhotosSectionProps) {
             {photoUri ? (
               <Image source={{ uri: photoUri }} className="w-full h-full" />
             ) : null}
-            <Pressable
-              className="absolute top-1 right-1"
-              onPress={() =>
-                Alert.alert(t('week.deletePhoto'), t('week.areYouSure'), [
-                  { text: t('common.cancel') },
-                  { text: t('common.delete'), style: 'destructive', onPress: () => deletePhoto.mutate(p.id) },
-                ])
-              }
-            >
-              <FontAwesome name="times-circle" size={22} color={colors.primary} />
-            </Pressable>
+            {!readOnly && (
+              <Pressable
+                className="absolute top-1 right-1"
+                onPress={() =>
+                  Alert.alert(t('week.deletePhoto'), t('week.areYouSure'), [
+                    { text: t('common.cancel') },
+                    { text: t('common.delete'), style: 'destructive', onPress: () => deletePhoto.mutate(p.id) },
+                  ])
+                }
+              >
+                <FontAwesome name="times-circle" size={22} color={colors.primary} />
+              </Pressable>
+            )}
           </View>
           );
         })}

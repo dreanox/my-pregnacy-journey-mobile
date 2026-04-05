@@ -4,26 +4,48 @@ import { useActivePregnancyId } from '@/hooks/useActivePregnancy';
 import { queryKeys } from '@/lib/queryKeys';
 import { fetchWeekEntry } from '@/lib/services/weekEntry';
 
-export function useWeekEntry(weekEntryRouteId: string) {
-  const pregnancyQ = useActivePregnancyId();
-  const { pregnancyId, isPending: pregnancyLoading, isError: pregnancyIsError, error: pregnancyErr, isFetched: pregnancyFetched } =
-    pregnancyQ;
+export type UseWeekEntryOptions = {
+  /** When set (e.g. viewing an archived pregnancy), fetch using this pregnancy id instead of the active one. */
+  pregnancyIdOverride?: string | string[] | undefined;
+};
 
-  const enabled = Boolean(pregnancyId && weekEntryRouteId);
+function normalizeParam(v: string | string[] | undefined): string | undefined {
+  if (v == null) return undefined;
+  return Array.isArray(v) ? v[0] : v;
+}
+
+export function useWeekEntry(weekEntryRouteId: string | undefined, options?: UseWeekEntryOptions) {
+  const pregnancyQ = useActivePregnancyId();
+  const {
+    isFetched: pregnancyFetched,
+    isError: pregnancyIsError,
+    error: pregnancyErr,
+    isPending: pregnancyLoading,
+    activePregnancy,
+  } = pregnancyQ;
+
+  const overrideRaw = normalizeParam(options?.pregnancyIdOverride);
+  const overrideNum = overrideRaw != null && overrideRaw !== '' ? Number(overrideRaw) : NaN;
+  const overrideValid = Number.isFinite(overrideNum) && overrideNum > 0;
+
+  const resolvedPregnancyId = overrideValid ? overrideNum : activePregnancy?.id;
+
+  const enabled = Boolean(weekEntryRouteId && resolvedPregnancyId);
 
   const query = useQuery({
-    queryKey: queryKeys.weekEntry.detail(weekEntryRouteId),
-    queryFn: () => fetchWeekEntry(pregnancyId!, weekEntryRouteId),
+    queryKey: queryKeys.weekEntry.detail(weekEntryRouteId ?? ''),
+    queryFn: () => fetchWeekEntry(resolvedPregnancyId!, weekEntryRouteId!),
     enabled,
   });
 
-  const noActivePregnancy = pregnancyFetched && pregnancyId == null && !pregnancyIsError;
+  const noActivePregnancy =
+    pregnancyFetched && !overrideValid && activePregnancy == null && !pregnancyIsError;
 
   return {
     ...query,
-    pregnancyId,
+    pregnancyId: resolvedPregnancyId ?? null,
     noActivePregnancy,
-    isLoading: pregnancyLoading || (enabled && query.isPending),
+    isLoading: (!overrideValid && pregnancyLoading) || (enabled && query.isPending),
     isError: pregnancyIsError || query.isError,
     error: pregnancyErr ?? query.error,
   };

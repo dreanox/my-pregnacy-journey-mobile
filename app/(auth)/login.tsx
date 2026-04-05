@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { MedicalDisclaimer } from '@/components/MedicalDisclaimer';
 import { useAuth } from '@/lib/auth';
 import { showError } from '@/lib/errorHelper';
 import { testConnection } from '@/lib/services/connectionApi';
@@ -130,6 +131,8 @@ export default function LoginScreen() {
             </Text>
           </Pressable>
         </Link>
+
+        <MedicalDisclaimer variant="inline" className="mt-6 px-1" />
 
         {__DEV__ && (
           <Pressable

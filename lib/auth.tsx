@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 import {
@@ -7,6 +8,10 @@ import {
   postLogout as logoutRequest,
   postRegister as registerRequest,
 } from '@/lib/services/authApi';
+import { cancelAllLocalAppointmentReminders } from '@/lib/notifications/appointmentReminders';
+import { setOneSignalExternalUserId } from '@/lib/notifications/oneSignalMobile';
+import i18n from '@/lib/i18n';
+import { setSessionInvalidationHandler } from '@/lib/sessionInvalidation';
 import type { User } from './types';
 
 interface AuthState {
@@ -18,8 +23,16 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    acceptTermsAndPrivacy: boolean,
+    acceptAdult: boolean
+  ) => Promise<void>;
   logout: () => Promise<void>;
+  /** Sin llamar al API (p. ej. tras eliminar cuenta en servidor). */
+  clearLocalSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,10 +44,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading: true,
     isAuthenticated: false,
   });
-
-  useEffect(() => {
-    loadToken();
-  }, []);
 
   const loadToken = async () => {
     try {
@@ -51,19 +60,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  useEffect(() => {
+    setSessionInvalidationHandler(async () => {
+      setOneSignalExternalUserId(null);
+      try {
+        await cancelAllLocalAppointmentReminders();
+      } catch {
+        // ignore
+      }
+      Alert.alert(i18n.t('auth.sessionEndedTitle'), i18n.t('auth.sessionEndedMessage'));
+      setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+    });
+    void loadToken();
+    return () => setSessionInvalidationHandler(null);
+  }, []);
+
   const login = async (email: string, password: string) => {
     const data = await loginRequest(email, password);
     await SecureStore.setItemAsync('auth_token', data.token);
     setState({ user: data.user, token: data.token, isLoading: false, isAuthenticated: true });
   };
 
-  const register = async (name: string, email: string, password: string) => {
-    const data = await registerRequest(name, email, password);
+  const register = async (
+    name: string,
+    email: string,
+    password: string,
+    acceptTermsAndPrivacy: boolean,
+    acceptAdult: boolean
+  ) => {
+    const data = await registerRequest(name, email, password, acceptTermsAndPrivacy, acceptAdult);
     await SecureStore.setItemAsync('auth_token', data.token);
     setState({ user: data.user, token: data.token, isLoading: false, isAuthenticated: true });
   };
 
   const logout = async () => {
+    setOneSignalExternalUserId(null);
+    try {
+      await cancelAllLocalAppointmentReminders();
+    } catch {
+      // ignore
+    }
     try {
       await logoutRequest();
     } catch {
@@ -73,8 +109,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
   };
 
+  const clearLocalSession = async () => {
+    setOneSignalExternalUserId(null);
+    try {
+      await cancelAllLocalAppointmentReminders();
+    } catch {
+      // ignore
+    }
+    await SecureStore.deleteItemAsync('auth_token');
+    setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
+  };
+
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout, clearLocalSession }}>
       {children}
     </AuthContext.Provider>
   );

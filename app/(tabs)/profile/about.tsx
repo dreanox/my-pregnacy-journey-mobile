@@ -1,6 +1,7 @@
 import { ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { MedicalDisclaimer } from '@/components/MedicalDisclaimer';
 import { DEVELOPER_NAME, getAppVersion } from '@/lib/constants/appMetadata';
 
 export default function ProfileAboutScreen() {
@@ -16,7 +17,8 @@ export default function ProfileAboutScreen() {
 
       <View className="w-full bg-card rounded-[14px] border border-border p-5 mb-5">
         <Text className="text-[16px] text-text-primary leading-6 mb-4">{t('profile.aboutDescription')}</Text>
-        <Text className="text-[15px] text-text-secondary leading-5">{t('profile.aboutAudience')}</Text>
+        <Text className="text-[15px] text-text-secondary leading-5 mb-4">{t('profile.aboutAudience')}</Text>
+        <MedicalDisclaimer />
       </View>
 
       <Text className="text-[15px] font-semibold text-primary text-center mb-1">

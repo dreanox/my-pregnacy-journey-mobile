@@ -14,6 +14,7 @@ import DateTimePicker, { useDefaultStyles } from 'react-native-ui-datepicker';
 import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 
+import { MedicalDisclaimer } from '@/components/MedicalDisclaimer';
 import { useTimeline } from '@/hooks/useTimeline';
 import { useTimelineWeekListScroll } from '@/hooks/useTimelineWeekListScroll';
 import {
@@ -21,6 +22,7 @@ import {
   TIMELINE_FLATLIST_WINDOW_SIZE,
   TIMELINE_WEEK_COUNT,
 } from '@/lib/constants/timeline';
+import { parseCalendarDateFromApi } from '@/lib/date/apiDates';
 import {
   calcFromLMP,
   formatGestationalWeekRange,
@@ -98,12 +100,14 @@ export default function TimelineScreen() {
         <Pressable className="bg-primary rounded-xl py-4 px-10 items-center w-full" onPress={() => setShowNewPregnancy(true)}>
           <Text className="text-white text-[17px] font-semibold">{t('timeline.beginTracking')}</Text>
         </Pressable>
+        <MedicalDisclaimer variant="inline" className="mt-6 px-1" />
 
         <Modal visible={showNewPregnancy} transparent animationType="slide">
           <View className="flex-1 bg-overlay justify-end">
             <View className="bg-card rounded-t-3xl p-6 pb-10">
               <Text className="text-[22px] font-bold text-text-primary mb-1">{t('timeline.newPregnancy')}</Text>
               <Text className="text-[14px] text-text-secondary mb-2">{t('timeline.lastPeriodDate')}</Text>
+              <MedicalDisclaimer className="mb-4" />
               <DateTimePicker
                 mode="single"
                 locale="es"
@@ -172,8 +176,23 @@ export default function TimelineScreen() {
       <View className="bg-primary pt-4 pb-5 px-5 rounded-b-3xl">
         <Text className="text-[28px] font-bold text-white">{t('timeline.week', { number: currentWeek })}</Text>
         {activePregnancy.due_date && (
-          <Text className="text-[14px] text-white-translucent mt-1">{t('timeline.dueDate', { date: dayjs(activePregnancy.due_date).format('DD/MM/YYYY') })}</Text>
+          <Text className="text-[14px] text-white-translucent mt-1">
+            {t('timeline.dueDate', {
+              date:
+                parseCalendarDateFromApi(activePregnancy.due_date)?.format('DD/MM/YYYY') ??
+                activePregnancy.due_date,
+            })}
+          </Text>
         )}
+        <Pressable
+          onPress={() => router.push('/profile/settings')}
+          hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+          className="self-start mt-3 active:opacity-80"
+        >
+          <Text className="text-[13px] text-white font-semibold underline">
+            {t('timeline.managePregnancy')}
+          </Text>
+        </Pressable>
       </View>
 
       {loadingEntries ? (
@@ -188,6 +207,7 @@ export default function TimelineScreen() {
           onScrollToIndexFailed={onScrollToWeekIndexFailed}
           initialNumToRender={TIMELINE_FLATLIST_INITIAL_NUM_RENDER}
           windowSize={TIMELINE_FLATLIST_WINDOW_SIZE}
+          ListFooterComponent={<MedicalDisclaimer variant="inline" className="mt-2 px-1 pb-2" />}
           renderItem={({ item: weekNum }) => {
             const entry = entryMap.get(weekNum);
             const isCurrent = weekNum === currentWeek;

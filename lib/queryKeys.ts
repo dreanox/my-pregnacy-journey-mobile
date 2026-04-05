@@ -7,6 +7,7 @@ export const queryKeys = {
     byPregnancy: (pregnancyId: number) => ['weekEntries', pregnancyId] as const,
   },
   weekEntry: {
+    all: ['weekEntry'] as const,
     detail: (id: string) => ['weekEntry', id] as const,
   },
   gallery: {

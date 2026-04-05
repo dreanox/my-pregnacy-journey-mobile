@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { MedicalDisclaimer } from '@/components/MedicalDisclaimer';
 import { useUpcomingAppointments } from '@/hooks/useUpcomingAppointments';
 import { formatAppointmentDateTime } from '@/lib/utils/formatAppointment';
 import { colors } from '@/lib/theme';
@@ -29,6 +30,7 @@ export default function AppointmentsScreen() {
         <Text className="text-[64px] mb-4">🏥</Text>
         <Text className="text-[22px] font-bold text-text-primary mb-2">{t('appointments.noUpcoming')}</Text>
         <Text className="text-sm text-text-muted text-center">{t('appointments.addFromWeekly')}</Text>
+        <MedicalDisclaimer variant="inline" className="mt-8 max-w-[320px]" />
       </View>
     );
   }
@@ -37,7 +39,8 @@ export default function AppointmentsScreen() {
     <FlatList
       data={appointments}
       keyExtractor={(item) => item.id.toString()}
-      contentContainerClassName="p-4"
+      contentContainerClassName="p-4 pb-6"
+      ListFooterComponent={<MedicalDisclaimer variant="inline" className="mt-3 px-1" />}
       renderItem={({ item }) => (
         <View className="flex-row bg-card rounded-[14px] p-4 mb-2.5 border border-border">
           <View className="w-[52px] min-h-[52px] rounded-xl bg-primary-soft justify-center items-center mr-[14px] py-1">

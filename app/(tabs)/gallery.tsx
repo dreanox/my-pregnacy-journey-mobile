@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { FullScreenPhotoModal } from '@/components/gallery';
+import { MedicalDisclaimer } from '@/components/MedicalDisclaimer';
 import { useDeleteGalleryPhoto } from '@/hooks/useDeleteGalleryPhoto';
 import { useGalleryPhotos } from '@/hooks/useGalleryPhotos';
 import { colors } from '@/lib/theme';
@@ -67,6 +68,7 @@ export default function GalleryScreen() {
         <Text className="text-[64px] mb-4">📸</Text>
         <Text className="text-[22px] font-bold text-text-primary mb-2">{t('gallery.noPhotos')}</Text>
         <Text className="text-sm text-text-muted text-center">{t('gallery.addPhotosHint')}</Text>
+        <MedicalDisclaimer variant="inline" className="mt-8 max-w-[320px]" />
       </View>
     );
   }
@@ -77,7 +79,8 @@ export default function GalleryScreen() {
         data={photos}
         numColumns={NUM_COLUMNS}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={{ padding: TILE_GAP }}
+        contentContainerStyle={{ padding: TILE_GAP, paddingBottom: 16 }}
+        ListFooterComponent={<MedicalDisclaimer variant="inline" className="mt-3 px-2 self-center" />}
         renderItem={({ item }) => {
           const photoUri = resolvePhotoDisplayUrl(item);
           return (

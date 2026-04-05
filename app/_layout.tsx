@@ -10,9 +10,12 @@ import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 import '@/lib/i18n';
+import '@/lib/notifications/notificationHandler';
+import '@/lib/notifications/oneSignalInit';
 import '../global.css';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { useAppointmentReminderBootstrap } from '@/hooks/useAppointmentReminderBootstrap';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { queryClient } from '@/lib/queryClient';
 import { STORAGE_KEYS } from '@/lib/constants/storageKeys';
@@ -25,6 +28,7 @@ SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
   const { isAuthenticated, isLoading } = useAuth();
+  useAppointmentReminderBootstrap();
   const segments = useSegments();
   const router = useRouter();
 

@@ -22,9 +22,10 @@ export type WeightSectionProps = {
   entry: WeekEntry;
   weekEntryRouteId: string;
   pregnancyId: number;
+  readOnly?: boolean;
 };
 
-export function WeightSection({ entry, weekEntryRouteId, pregnancyId }: WeightSectionProps) {
+export function WeightSection({ entry, weekEntryRouteId, pregnancyId, readOnly = false }: WeightSectionProps) {
   const { t } = useTranslation();
   const invalidate = useInvalidateWeekEntry(weekEntryRouteId);
   const [weight, setWeight] = useState(entry.weight?.toString() ?? '');
@@ -81,7 +82,7 @@ export function WeightSection({ entry, weekEntryRouteId, pregnancyId }: WeightSe
             <FontAwesome name="balance-scale" size={16} /> {t('week.weight')}
           </Text>
         </View>
-        {!editing && (
+        {!readOnly && !editing && (
           <Pressable onPress={openWeightEdit} hitSlop={hitSlop} className="p-1">
             <FontAwesome name="pencil" size={16} color={colors.primary} />
           </Pressable>

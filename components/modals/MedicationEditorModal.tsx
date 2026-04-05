@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CharacterLimitNotice } from '@/components/CharacterLimitNotice';
 import { colors } from '@/lib/theme';
 
 export type MedicationEditorModalProps = {
@@ -36,6 +37,7 @@ export type MedicationEditorModalProps = {
   addLabel: string;
   saveLabel: string;
   cancelLabel: string;
+  nameMaxLength?: number;
 };
 
 export function MedicationEditorModal({
@@ -60,6 +62,7 @@ export function MedicationEditorModal({
   addLabel,
   saveLabel,
   cancelLabel,
+  nameMaxLength,
 }: MedicationEditorModalProps) {
   const insets = useSafeAreaInsets();
 
@@ -95,8 +98,10 @@ export function MedicationEditorModal({
                   placeholderTextColor={colors.textPlaceholder}
                   value={medName}
                   onChangeText={onChangeName}
+                  maxLength={nameMaxLength}
                 />
               </View>
+              <CharacterLimitNotice currentLength={medName.length} maxLength={nameMaxLength} className="mb-1" />
               {showMedNameError && (
                 <View className="flex-row items-center gap-[6px] mb-[10px] px-[4px]">
                   <FontAwesome name="times-circle" size={14} color={colors.primary} />

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { MedicalDisclaimer } from '@/components/MedicalDisclaimer';
 import {
   AppointmentsSection,
   MedicationsSection,
@@ -17,13 +18,32 @@ import {
   SymptomsSection,
   WeightSection,
 } from '@/components/week';
+import { useActivePregnancyId } from '@/hooks/useActivePregnancy';
 import { useWeekEntry } from '@/hooks/useWeekEntry';
 import { colors } from '@/lib/theme';
 
+function firstParam(v: string | string[] | undefined): string | undefined {
+  if (v == null) return undefined;
+  return Array.isArray(v) ? v[0] : v;
+}
+
 export default function WeekDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string | string[]; pregnancyId?: string | string[] }>();
+  const id = firstParam(params.id);
+  const pregnancyIdParam = firstParam(params.pregnancyId);
   const { t } = useTranslation();
-  const { data: entry, isLoading, isError, pregnancyId, noActivePregnancy } = useWeekEntry(id);
+  const { activePregnancy } = useActivePregnancyId();
+  const { data: entry, isLoading, isError, pregnancyId, noActivePregnancy } = useWeekEntry(id, {
+    pregnancyIdOverride: pregnancyIdParam,
+  });
+
+  if (!id) {
+    return (
+      <View className="flex-1 justify-center items-center bg-surface p-8">
+        <Text className="text-[16px] text-text-secondary text-center">{t('common.error')}</Text>
+      </View>
+    );
+  }
 
   if (noActivePregnancy) {
     return (
@@ -41,13 +61,15 @@ export default function WeekDetailScreen() {
     );
   }
 
-  if (isError || !entry || pregnancyId == null) {
+  if (isError || !entry || pregnancyId == null || !id) {
     return (
       <View className="flex-1 justify-center items-center bg-surface p-8">
         <Text className="text-[16px] text-text-secondary text-center">{t('common.error')}</Text>
       </View>
     );
   }
+
+  const readOnly = activePregnancy == null || entry.pregnancy_id !== activePregnancy.id;
 
   return (
     <>
@@ -66,12 +88,23 @@ export default function WeekDetailScreen() {
           contentContainerClassName="p-4 pb-10"
           keyboardShouldPersistTaps="handled"
         >
-          <WeightSection entry={entry} weekEntryRouteId={id} pregnancyId={pregnancyId} />
-          <NotesSection entry={entry} weekEntryRouteId={id} />
-          <SymptomsSection entry={entry} weekEntryRouteId={id} />
-          <MedicationsSection entry={entry} weekEntryRouteId={id} />
-          <PhotosSection entry={entry} weekEntryRouteId={id} />
-          <AppointmentsSection entry={entry} weekEntryRouteId={id} />
+          {readOnly ? (
+            <View className="bg-primary-soft border border-primary rounded-[12px] px-3 py-2.5 mb-3">
+              <Text className="text-[13px] text-primary font-medium leading-5">{t('week.readOnlyArchiveHint')}</Text>
+            </View>
+          ) : null}
+          <MedicalDisclaimer className="mb-3" />
+          <WeightSection
+            entry={entry}
+            weekEntryRouteId={id}
+            pregnancyId={pregnancyId}
+            readOnly={readOnly}
+          />
+          <NotesSection entry={entry} weekEntryRouteId={id} readOnly={readOnly} />
+          <SymptomsSection entry={entry} weekEntryRouteId={id} readOnly={readOnly} />
+          <MedicationsSection entry={entry} weekEntryRouteId={id} readOnly={readOnly} />
+          <PhotosSection entry={entry} weekEntryRouteId={id} readOnly={readOnly} />
+          <AppointmentsSection entry={entry} weekEntryRouteId={id} readOnly={readOnly} />
         </ScrollView>
       </KeyboardAvoidingView>
     </>

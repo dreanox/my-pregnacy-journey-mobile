@@ -8,6 +8,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Switch,
   Text,
   TextInput,
   View,
@@ -17,6 +18,9 @@ import { useTranslation } from 'react-i18next';
 import DateTimePicker, { type DateType, useDefaultStyles } from 'react-native-ui-datepicker';
 import dayjs from 'dayjs';
 
+import { CharacterLimitNotice } from '@/components/CharacterLimitNotice';
+import { parseLocalWallDateTime } from '@/lib/date/apiDates';
+import { CONTENT_LIMITS } from '@/lib/constants/contentLimits';
 import { APPOINTMENT_TIME_PICKER_CONTAINER_HEIGHT, INPUT_ACCESSORY_IDS } from '@/lib/constants/ui';
 import { colors } from '@/lib/theme';
 
@@ -24,7 +28,7 @@ type PickerSegment = 'date' | 'time';
 
 export type AppointmentCreateModalProps = {
   visible: boolean;
-  /** Local wall time `YYYY-MM-DD HH:mm:ss` for the API, or unset until the user picks. */
+  /** Local wall time `YYYY-MM-DD HH:mm:ss` (converted to UTC ISO on submit in the parent). */
   appointmentDateTime: string | undefined;
   onChangeAppointmentDateTime: (v: string | undefined) => void;
   doctor: string;
@@ -42,6 +46,17 @@ export type AppointmentCreateModalProps = {
   locale: string;
   /** True while the create request is in flight (shows spinner on the submit button). */
   submitting?: boolean;
+  /** Primary button label (e.g. Save when editing). Defaults to `addLabel`. */
+  primaryButtonLabel?: string;
+  doctorMaxLength?: number;
+  notesMaxLength?: number;
+  /** null = sin recordatorio; 5–120 minutos antes de la cita. */
+  reminderMinutesBefore: number | null;
+  onChangeReminderMinutesBefore: (v: number | null) => void;
+  reminderSwitchLabel: string;
+  reminderHint: string;
+  /** Texto ya interpolado (ej. t(..., { minutes })). */
+  reminderMinutesSummary: string;
 };
 
 export function AppointmentCreateModal({
@@ -62,6 +77,14 @@ export function AppointmentCreateModal({
   cancelLabel,
   locale,
   submitting = false,
+  primaryButtonLabel,
+  doctorMaxLength,
+  notesMaxLength,
+  reminderMinutesBefore,
+  onChangeReminderMinutesBefore,
+  reminderSwitchLabel,
+  reminderHint,
+  reminderMinutesSummary,
 }: AppointmentCreateModalProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -72,7 +95,19 @@ export function AppointmentCreateModal({
     if (visible) setSegment('date');
   }, [visible]);
 
-  const pickerDate = appointmentDateTime ? dayjs(appointmentDateTime).toDate() : new Date();
+  const pickerDate = appointmentDateTime ? parseLocalWallDateTime(appointmentDateTime).toDate() : new Date();
+
+  const reminderEnabled = reminderMinutesBefore !== null;
+  const minutes = reminderMinutesBefore ?? CONTENT_LIMITS.appointmentReminderMinutesDefault;
+
+  const bumpReminder = (delta: number) => {
+    const next = Math.round(minutes / CONTENT_LIMITS.appointmentReminderMinutesStep) * CONTENT_LIMITS.appointmentReminderMinutesStep + delta;
+    const clamped = Math.min(
+      CONTENT_LIMITS.appointmentReminderMinutesMax,
+      Math.max(CONTENT_LIMITS.appointmentReminderMinutesMin, next)
+    );
+    onChangeReminderMinutesBefore(clamped);
+  };
 
   const pickerStyles = useMemo(
     () => ({
@@ -95,7 +130,7 @@ export function AppointmentCreateModal({
       return;
     }
     const p = dayjs(picked);
-    const base = appointmentDateTime ? dayjs(appointmentDateTime) : dayjs();
+    const base = appointmentDateTime ? parseLocalWallDateTime(appointmentDateTime) : dayjs();
     onChangeAppointmentDateTime(
       p.hour(base.hour()).minute(base.minute()).second(base.second()).format('YYYY-MM-DD HH:mm:ss')
     );
@@ -107,7 +142,7 @@ export function AppointmentCreateModal({
       return;
     }
     const p = dayjs(picked);
-    const base = appointmentDateTime ? dayjs(appointmentDateTime) : dayjs();
+    const base = appointmentDateTime ? parseLocalWallDateTime(appointmentDateTime) : dayjs();
     onChangeAppointmentDateTime(
       base.hour(p.hour()).minute(p.minute()).second(p.second()).format('YYYY-MM-DD HH:mm:ss')
     );
@@ -212,6 +247,50 @@ export function AppointmentCreateModal({
                   />
                 )}
               </View>
+
+              <View className="mt-2 mb-4">
+                <View className="flex-row items-center justify-between py-2">
+                  <Text className="text-[15px] font-semibold text-text-primary flex-1 pr-3">{reminderSwitchLabel}</Text>
+                  <Switch
+                    value={reminderEnabled}
+                    onValueChange={(on) =>
+                      onChangeReminderMinutesBefore(
+                        on ? CONTENT_LIMITS.appointmentReminderMinutesDefault : null
+                      )
+                    }
+                    disabled={submitting}
+                    trackColor={{ false: colors.surfaceMuted, true: colors.primarySoft }}
+                    thumbColor={reminderEnabled ? colors.primary : colors.iconMuted}
+                  />
+                </View>
+                {reminderEnabled ? (
+                  <>
+                    <Text className="text-[12px] text-text-muted mb-2">{reminderHint}</Text>
+                    <View className="flex-row items-center justify-between bg-card-subtle rounded-[12px] border border-border px-3 py-3">
+                      <Pressable
+                        onPress={() => bumpReminder(-CONTENT_LIMITS.appointmentReminderMinutesStep)}
+                        disabled={submitting || minutes <= CONTENT_LIMITS.appointmentReminderMinutesMin}
+                        className="w-11 h-11 rounded-full bg-primary items-center justify-center active:opacity-80 disabled:opacity-40"
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text className="text-white text-[20px] font-bold">−</Text>
+                      </Pressable>
+                      <Text className="text-[15px] font-semibold text-text-primary text-center flex-1 px-2">
+                        {reminderMinutesSummary}
+                      </Text>
+                      <Pressable
+                        onPress={() => bumpReminder(CONTENT_LIMITS.appointmentReminderMinutesStep)}
+                        disabled={submitting || minutes >= CONTENT_LIMITS.appointmentReminderMinutesMax}
+                        className="w-11 h-11 rounded-full bg-primary items-center justify-center active:opacity-80 disabled:opacity-40"
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Text className="text-white text-[20px] font-bold">+</Text>
+                      </Pressable>
+                    </View>
+                  </>
+                ) : null}
+              </View>
+
               <TextInput
                 className="bg-card-subtle rounded-[10px] px-[14px] py-3 text-[15px] border border-border text-text-primary mb-2"
                 placeholder={doctorPlaceholder}
@@ -219,7 +298,9 @@ export function AppointmentCreateModal({
                 value={doctor}
                 onChangeText={onChangeDoctor}
                 editable={!submitting}
+                maxLength={doctorMaxLength}
               />
+              <CharacterLimitNotice currentLength={doctor.length} maxLength={doctorMaxLength} className="mb-2" />
               <View className="flex-row items-start justify-between gap-2 mb-1">
                 <Text className="text-[12px] text-text-muted flex-1" style={{ flexShrink: 1 }}>
                   {t('week.notesMultilineHint')}
@@ -243,10 +324,12 @@ export function AppointmentCreateModal({
                 onChangeText={onChangeNotes}
                 multiline
                 editable={!submitting}
+                maxLength={notesMaxLength}
                 inputAccessoryViewID={
                   Platform.OS === 'ios' ? INPUT_ACCESSORY_IDS.appointmentNotes : undefined
                 }
               />
+              <CharacterLimitNotice currentLength={notes.length} maxLength={notesMaxLength} className="mb-2" />
               <Pressable
                 className={`bg-primary rounded-[12px] py-4 items-center mt-1 flex-row justify-center gap-2 ${submitting ? 'opacity-90' : ''}`}
                 onPress={submitting ? undefined : dismissKeyboardAndSubmit}
@@ -255,7 +338,9 @@ export function AppointmentCreateModal({
                 {submitting ? (
                   <ActivityIndicator color={colors.white} />
                 ) : (
-                  <Text className="text-white text-[17px] font-semibold">{addLabel}</Text>
+                  <Text className="text-white text-[17px] font-semibold">
+                    {primaryButtonLabel ?? addLabel}
+                  </Text>
                 )}
               </Pressable>
               <Pressable
