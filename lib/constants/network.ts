@@ -4,8 +4,8 @@
  */
 export const DEV_MACHINE_IP = '192.168.100.51';
 
-/** Production API origin (no path). Replace before shipping the app. */
-export const PRODUCTION_API_ORIGIN = 'https://your-production-url.com';
+/** Production API origin (no path). Release builds (`!__DEV__`) use this + `/api/v1`. */
+export const PRODUCTION_API_ORIGIN = 'https://api.pigworlds.com';
 
 const API_V1_SUFFIX = '/api/v1';
 

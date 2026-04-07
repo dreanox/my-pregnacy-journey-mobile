@@ -14,7 +14,7 @@
     "notSubstitute": "Esta app no sustituye asesor\u00eda m\u00e9dica profesional."
   },
   "auth": {
-    "appName": "El Diario de mi Embarazo",
+    "appName": "MIDE",
     "welcomeBack": "Bienvenida de vuelta",
     "email": "Correo electr\u00f3nico",
     "password": "Contrase\u00f1a",
@@ -136,7 +136,7 @@
     "reactivatePregnancyConfirmButton": "Activar",
     "reactivatePregnancyFailed": "No se pudo activar este embarazo. Intenta de nuevo.",
     "aboutVersion": "Versi\u00f3n {{version}}",
-    "aboutDescription": "El Diario de mi Embarazo te ayuda a registrar semana a semana c\u00f3mo te sientes, tu peso, medicamentos, fotos, notas y citas m\u00e9dicas, para tener tu historia en un solo lugar.",
+    "aboutDescription": "MIDE te ayuda a registrar semana a semana c\u00f3mo te sientes, tu peso, medicamentos, fotos, notas y citas m\u00e9dicas, para tener tu historia en un solo lugar.",
     "aboutAudience": "Est\u00e1 pensada para personas embarazadas y sus acompa\u00f1antes que quieren un compa\u00f1ero sencillo y privado durante el embarazo.",
     "aboutDeveloper": "Desarrollada por {{name}}",
     "aboutThanks": "Gracias por confiarnos esta etapa de tu vida.",

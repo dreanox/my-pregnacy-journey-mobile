@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "My Pregnancy Journey",
-    "slug": "my-pregnancy-journey",
+    "name": "MIDE",
+    "slug": "mide",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mypregnancyjourney",
+    "scheme": "mide",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -15,11 +15,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mypregnancyjourney.app",
+      "bundleIdentifier": "com.mide.app",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "We need camera access to take belly photos",
-        "NSPhotoLibraryUsageDescription": "We need photo library access to save and pick belly photos"
+        "NSCameraUsageDescription": "MIDE needs camera access to capture belly photos.",
+        "NSPhotoLibraryUsageDescription": "MIDE needs photo library access to save and pick belly photos."
       }
     },
     "android": {
@@ -29,11 +29,12 @@
         "backgroundColor": "#FFF0F5"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.mypregnancyjourney.app",
+      "package": "com.mide.app",
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -48,8 +49,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow My Pregnancy Journey to access your photos to track your belly evolution.",
-          "cameraPermission": "Allow My Pregnancy Journey to use the camera to capture belly photos."
+          "photosPermission": "Allow MIDE to access your photos to track your belly evolution.",
+          "cameraPermission": "Allow MIDE to use the camera to capture belly photos."
         }
       ],
       "expo-localization"
@@ -59,8 +60,10 @@
     },
     "extra": {
       "eas": {
-        "projectId": ""
-      }
-    }
+        "projectId": "5ae3bf58-2395-402c-b562-67176bf0979d"
+      },
+      "router": {}
+    },
+    "owner": "drakgengard"
   }
 }

@@ -14,7 +14,7 @@
     "notSubstitute": "This app does not replace professional medical advice."
   },
   "auth": {
-    "appName": "My Pregnancy Journey",
+    "appName": "MIDE",
     "welcomeBack": "Welcome back",
     "email": "Email",
     "password": "Password",
@@ -136,7 +136,7 @@
     "reactivatePregnancyConfirmButton": "Activate",
     "reactivatePregnancyFailed": "Could not activate this pregnancy. Try again.",
     "aboutVersion": "Version {{version}}",
-    "aboutDescription": "My Pregnancy Journey helps you record week by week how you feel, your weight, medications, photos, notes, and medical appointments — so you have your story in one place.",
+    "aboutDescription": "MIDE helps you record week by week how you feel, your weight, medications, photos, notes, and medical appointments — so you have your story in one place.",
     "aboutAudience": "It is designed for pregnant people and their partners who want a simple, private companion during pregnancy.",
     "aboutDeveloper": "Developed by {{name}}",
     "aboutThanks": "Thank you for trusting us with this stage of your life.",
