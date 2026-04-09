@@ -123,7 +123,7 @@ export function PhotosSection({ entry, weekEntryRouteId, readOnly = false }: Pho
           return (
           <View key={p.id} className="w-[100px] h-[100px] rounded-[10px] mr-2.5 overflow-hidden bg-border">
             {photoUri ? (
-              <Image source={{ uri: photoUri }} className="w-full h-full" />
+              <Image source={{ uri: photoUri }} className="w-full h-full" resizeMode="cover" />
             ) : null}
             {!readOnly && (
               <Pressable

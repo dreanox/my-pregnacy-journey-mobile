@@ -37,35 +37,52 @@ export default function WeekDetailScreen() {
     pregnancyIdOverride: pregnancyIdParam,
   });
 
+  const headerLoadingOptions = {
+    title: '',
+    headerBackTitle: '',
+  } as const;
+
   if (!id) {
     return (
-      <View className="flex-1 justify-center items-center bg-surface p-8">
-        <Text className="text-[16px] text-text-secondary text-center">{t('common.error')}</Text>
-      </View>
+      <>
+        <Stack.Screen options={headerLoadingOptions} />
+        <View className="flex-1 justify-center items-center bg-surface p-8">
+          <Text className="text-[16px] text-text-secondary text-center">{t('common.error')}</Text>
+        </View>
+      </>
     );
   }
 
   if (noActivePregnancy) {
     return (
-      <View className="flex-1 justify-center items-center bg-surface p-8">
-        <Text className="text-[16px] text-text-secondary text-center">{t('timeline.startJourney')}</Text>
-      </View>
+      <>
+        <Stack.Screen options={headerLoadingOptions} />
+        <View className="flex-1 justify-center items-center bg-surface p-8">
+          <Text className="text-[16px] text-text-secondary text-center">{t('timeline.startJourney')}</Text>
+        </View>
+      </>
     );
   }
 
   if (isLoading) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <>
+        <Stack.Screen options={headerLoadingOptions} />
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </>
     );
   }
 
   if (isError || !entry || pregnancyId == null || !id) {
     return (
-      <View className="flex-1 justify-center items-center bg-surface p-8">
-        <Text className="text-[16px] text-text-secondary text-center">{t('common.error')}</Text>
-      </View>
+      <>
+        <Stack.Screen options={headerLoadingOptions} />
+        <View className="flex-1 justify-center items-center bg-surface p-8">
+          <Text className="text-[16px] text-text-secondary text-center">{t('common.error')}</Text>
+        </View>
+      </>
     );
   }
 
@@ -76,8 +93,8 @@ export default function WeekDetailScreen() {
       <Stack.Screen
         options={{
           title: t('week.title', { number: entry.week_number }),
-          headerBackTitleVisible: false,
-        } as { title: string; headerBackTitleVisible: boolean }}
+          headerBackTitle: '',
+        }}
       />
       <KeyboardAvoidingView
         className="flex-1"

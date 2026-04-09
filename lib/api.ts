@@ -26,7 +26,10 @@ api.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       await SecureStore.deleteItemAsync('auth_token');
-      notifySessionInvalidated();
+      const silent = Boolean(error.config?.authSilentInvalidation);
+      if (!silent) {
+        notifySessionInvalidated();
+      }
     }
     return Promise.reject(error);
   }

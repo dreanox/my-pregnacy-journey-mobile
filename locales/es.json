@@ -99,7 +99,7 @@
     "saving": "Guardando\u2026",
     "settingsNotificationsSection": "Recordatorios",
     "settingsNotificationsTitle": "Notificaciones push",
-    "settingsNotificationsHint": "Al crear o editar una cita puedes activar recordatorio (5\u2013120 min antes). Los push usan OneSignal: define EXPO_PUBLIC_ONESIGNAL_ID y haz prebuild / EAS. El servidor env\u00eda el aviso con tu id de usuario como External User ID.",
+    "settingsNotificationsHint": "Al crear o editar una cita puedes activar un recordatorio entre 5 y 120 minutos antes de la hora de la cita. Para recibirlo, permite las notificaciones de MIDE en los ajustes de tu tel\u00e9fono. El aviso lo env\u00eda nuestro servidor en el momento indicado.",
     "settingsDataSection": "Tus datos",
     "settingsDataHint": "Tu diario (semanas, peso, s\u00edntomas, medicamentos, fotos, notas y citas) se guarda con tu cuenta en nuestros servidores. Cierra sesi\u00f3n en dispositivos compartidos si otra persona usa el tel\u00e9fono.",
     "settingsPregnancySection": "Embarazo actual",

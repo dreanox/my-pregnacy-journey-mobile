@@ -99,7 +99,7 @@
     "saving": "Saving…",
     "settingsNotificationsSection": "Reminders",
     "settingsNotificationsTitle": "Push notifications",
-    "settingsNotificationsHint": "When you create or edit an appointment you can turn on a reminder (5\u2013120 minutes before). Push uses OneSignal: set EXPO_PUBLIC_ONESIGNAL_ID and run prebuild / EAS. The server targets your Laravel user id as OneSignal External User ID.",
+    "settingsNotificationsHint": "When you create or edit an appointment you can turn on a reminder between 5 and 120 minutes before the appointment time. To receive it, allow notifications for MIDE in your device settings. Our server sends the alert at the scheduled time.",
     "settingsDataSection": "Your data",
     "settingsDataHint": "Your journal (weeks, weight, symptoms, medications, photos, notes, and appointments) is saved with your account on our servers. Sign out on shared devices if someone else uses the phone.",
     "settingsPregnancySection": "Current pregnancy",

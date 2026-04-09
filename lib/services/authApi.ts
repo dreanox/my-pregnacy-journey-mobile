@@ -2,7 +2,7 @@ import api from '@/lib/api';
 import type { AuthResponse, User } from '@/lib/types';
 
 export async function fetchCurrentUser(): Promise<User> {
-  const { data } = await api.get<User>('/user');
+  const { data } = await api.get<User>('/user', { authSilentInvalidation: true });
   return data;
 }
 

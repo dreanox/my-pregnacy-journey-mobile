@@ -94,7 +94,7 @@ export default function GalleryScreen() {
               })}
             >
               {photoUri ? (
-                <Image source={{ uri: photoUri }} className="w-full h-full" />
+                <Image source={{ uri: photoUri }} className="w-full h-full" resizeMode="cover" />
               ) : null}
               <View className="absolute bottom-0 left-0 right-0 bg-black/40 py-[3px] px-1.5">
                 <Text className="text-white text-[11px] font-semibold">

@@ -2,28 +2,30 @@
   "expo": {
     "name": "MIDE",
     "slug": "mide",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mide",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
+      "image": "./assets/images/splash-solid.png",
+      "resizeMode": "cover",
       "backgroundColor": "#FFF0F5"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mide.app",
-      "buildNumber": "1",
+      "buildNumber": "3",
       "infoPlist": {
         "NSCameraUsageDescription": "MIDE needs camera access to capture belly photos.",
-        "NSPhotoLibraryUsageDescription": "MIDE needs photo library access to save and pick belly photos."
+        "NSPhotoLibraryUsageDescription": "MIDE needs photo library access to save and pick belly photos.",
+        "NSLocationWhenInUseUsageDescription": "MIDE may use your location while the app is open when required by notifications or other integrated services. Your pregnancy data in MIDE does not rely on your location.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "versionCode": 1,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FFF0F5"

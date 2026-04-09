@@ -6,7 +6,6 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 import '@/lib/i18n';
@@ -14,13 +13,13 @@ import '@/lib/notifications/notificationHandler';
 import '@/lib/notifications/oneSignalInit';
 import '../global.css';
 
+import { AppBrandedLoader } from '@/components/AppBrandedLoader';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAppointmentReminderBootstrap } from '@/hooks/useAppointmentReminderBootstrap';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { queryClient } from '@/lib/queryClient';
 import { STORAGE_KEYS } from '@/lib/constants/storageKeys';
 import i18n from '@/lib/i18n';
-import { colors } from '@/lib/theme';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -45,11 +44,7 @@ function RootNavigator() {
   }, [isAuthenticated, isLoading, segments]);
 
   if (isLoading) {
-    return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <AppBrandedLoader showSpinner />;
   }
 
   return (
@@ -62,7 +57,14 @@ function RootNavigator() {
           headerBackTitle: '',
         }}
       />
-      <Stack.Screen name="week/[id]" options={{ headerShown: true }} />
+      <Stack.Screen
+        name="week/[id]"
+        options={{
+          headerShown: true,
+          title: '',
+          headerBackTitle: '',
+        }}
+      />
     </Stack>
   );
 }
@@ -103,7 +105,9 @@ export default function RootLayout() {
     }
   }, [loaded, i18nReady]);
 
-  if (!loaded || !i18nReady) return null;
+  if (!loaded || !i18nReady) {
+    return <AppBrandedLoader />;
+  }
 
   return (
     <SafeAreaProvider>
