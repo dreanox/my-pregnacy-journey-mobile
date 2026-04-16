@@ -9,6 +9,13 @@ export interface User {
   legal_privacy_version?: string | null;
   accepted_adult?: boolean;
   accepted_at?: string | null;
+  /** Trusted account (server); broad in-app diagnostics when true. */
+  is_developer?: boolean;
+  /**
+   * Boolean toggles from the API (`users.feature_flags`). Keys are defined only on the backend;
+   * the app reads them by name via `hasFeatureFlag` / helpers in `featureFlags.ts`.
+   */
+  feature_flags?: Record<string, boolean> | null;
 }
 
 export interface Pregnancy {

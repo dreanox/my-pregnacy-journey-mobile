@@ -11,7 +11,8 @@ import {
 import { cancelAllLocalAppointmentReminders } from '@/lib/notifications/appointmentReminders';
 import { setOneSignalExternalUserId } from '@/lib/notifications/oneSignalMobile';
 import i18n from '@/lib/i18n';
-import { setSessionInvalidationHandler } from '@/lib/sessionInvalidation';
+import { setDevUserSnapshot } from '@/lib/devUserContext';
+import { setSessionInvalidationHandler, setUserSessionActive } from '@/lib/sessionInvalidation';
 import type { User } from './types';
 
 interface AuthState {
@@ -46,19 +47,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const loadToken = async () => {
+    setUserSessionActive(false);
     try {
       const token = await SecureStore.getItemAsync('auth_token');
       if (token) {
         const user = await fetchCurrentUser();
+        setUserSessionActive(true);
         setState({ user, token, isLoading: false, isAuthenticated: true });
       } else {
         setState((s) => ({ ...s, isLoading: false }));
       }
     } catch {
       await SecureStore.deleteItemAsync('auth_token');
+      setUserSessionActive(false);
       setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
     }
   };
+
+  useEffect(() => {
+    setDevUserSnapshot(state.user);
+  }, [state.user]);
 
   useEffect(() => {
     setSessionInvalidationHandler(async () => {
@@ -72,12 +80,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState({ user: null, token: null, isLoading: false, isAuthenticated: false });
     });
     void loadToken();
-    return () => setSessionInvalidationHandler(null);
+    return () => {
+      setSessionInvalidationHandler(null);
+      setDevUserSnapshot(null);
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     const data = await loginRequest(email, password);
     await SecureStore.setItemAsync('auth_token', data.token);
+    setUserSessionActive(true);
     setState({ user: data.user, token: data.token, isLoading: false, isAuthenticated: true });
   };
 
@@ -90,10 +102,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ) => {
     const data = await registerRequest(name, email, password, acceptTermsAndPrivacy, acceptAdult);
     await SecureStore.setItemAsync('auth_token', data.token);
+    setUserSessionActive(true);
     setState({ user: data.user, token: data.token, isLoading: false, isAuthenticated: true });
   };
 
   const logout = async () => {
+    setUserSessionActive(false);
     setOneSignalExternalUserId(null);
     try {
       await cancelAllLocalAppointmentReminders();
@@ -110,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearLocalSession = async () => {
+    setUserSessionActive(false);
     setOneSignalExternalUserId(null);
     try {
       await cancelAllLocalAppointmentReminders();

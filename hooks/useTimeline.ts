@@ -1,14 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
-import { Alert } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef } from 'react';
+import { Alert, AppState, type AppStateStatus } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useActivePregnancy } from '@/hooks/useActivePregnancy';
+import { getLiveCurrentWeek } from '@/lib/gestationalWeek';
 import { queryKeys } from '@/lib/queryKeys';
 import {
   createPregnancy as createPregnancyApi,
   createWeekEntryForPregnancy,
   fetchWeekEntriesByPregnancy,
+  updatePregnancy,
   type CreatePregnancyPayload,
 } from '@/lib/services/weekEntry';
 import type { Pregnancy, WeekEntry } from '@/lib/types';
@@ -57,6 +60,42 @@ export function useTimeline(options?: UseTimelineOptions) {
       Alert.alert(t('common.error'), t('timeline.couldNotOpenWeek'));
     },
   });
+
+  const syncStoredWeekMutation = useMutation({
+    mutationFn: ({ id, week }: { id: number; week: number }) => updatePregnancy(id, { current_week: week }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.pregnancies.all });
+    },
+  });
+
+  const trySyncStoredGestationalWeek = useCallback(() => {
+    if (!activePregnancy || syncStoredWeekMutation.isPending) return;
+    const live = getLiveCurrentWeek(activePregnancy);
+    if (live !== activePregnancy.current_week) {
+      syncStoredWeekMutation.mutate({ id: activePregnancy.id, week: live });
+    }
+  }, [activePregnancy, syncStoredWeekMutation]);
+
+  useEffect(() => {
+    trySyncStoredGestationalWeek();
+  }, [trySyncStoredGestationalWeek]);
+
+  useFocusEffect(
+    useCallback(() => {
+      trySyncStoredGestationalWeek();
+    }, [trySyncStoredGestationalWeek])
+  );
+
+  const appStateRef = useRef(AppState.currentState);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
+      if (appStateRef.current.match(/inactive|background/) && next === 'active') {
+        trySyncStoredGestationalWeek();
+      }
+      appStateRef.current = next;
+    });
+    return () => sub.remove();
+  }, [trySyncStoredGestationalWeek]);
 
   return {
     pregnancies,

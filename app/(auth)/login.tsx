@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { MedicalDisclaimer } from '@/components/MedicalDisclaimer';
 import { useAuth } from '@/lib/auth';
 import { showError } from '@/lib/errorHelper';
+import { shouldShowLoginScreenApiTest } from '@/lib/featureFlags';
 import { testConnection } from '@/lib/services/connectionApi';
 import { colors } from '@/lib/theme';
 import { isValidAuthEmail } from '@/lib/validators/auth';
@@ -134,7 +135,7 @@ export default function LoginScreen() {
 
         <MedicalDisclaimer variant="inline" className="mt-6 px-1" />
 
-        {__DEV__ && (
+        {shouldShowLoginScreenApiTest() && (
           <Pressable
             className={`mt-[32px] flex-row gap-[10px] justify-center border-2 border-primary rounded-[12px] py-[14px] items-center bg-transparent ${testing ? 'opacity-70' : ''}`}
             onPress={async () => {
@@ -151,7 +152,7 @@ export default function LoginScreen() {
             ) : (
               <>
                 <FontAwesome name="plug" size={18} color={colors.primary} />
-                <Text className="text-primary text-[16px] font-semibold">Test API Connection</Text>
+                <Text className="text-primary text-[16px] font-semibold">{t('profile.testApiConnection')}</Text>
               </>
             )}
           </Pressable>

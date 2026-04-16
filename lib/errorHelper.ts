@@ -1,13 +1,19 @@
 import axios from 'axios';
 import { Alert } from 'react-native';
 
+import { showVerboseApiErrorsForCurrentUser } from '@/lib/featureFlags';
+
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null;
 }
 
 export function showError(title: string, error: unknown, fallbackMessage: string) {
   if (axios.isAxiosError(error)) {
-    if (__DEV__) {
+    // 401 is handled in api.ts (clear token + optional session-ended alert). Avoid a second Alert from callers.
+    if (error.response?.status === 401) {
+      return;
+    }
+    if (showVerboseApiErrorsForCurrentUser()) {
       const status = error.response?.status ?? 'N/A';
       const url = error.config?.url ?? 'unknown';
       const method = (error.config?.method ?? 'unknown').toUpperCase();
@@ -16,7 +22,7 @@ export function showError(title: string, error: unknown, fallbackMessage: string
         : error.message ?? 'No response';
 
       Alert.alert(
-        `${title} [DEV]`,
+        `${title} [verbose]`,
         `${method} ${url}\nStatus: ${status}\n\n${data}`,
       );
       return;
@@ -40,8 +46,8 @@ export function showError(title: string, error: unknown, fallbackMessage: string
     return;
   }
 
-  if (__DEV__) {
-    Alert.alert(`${title} [DEV]`, String(error));
+  if (showVerboseApiErrorsForCurrentUser()) {
+    Alert.alert(`${title} [verbose]`, String(error));
     return;
   }
 

@@ -2,7 +2,11 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 import { getApiBaseUrl } from '@/lib/constants/network';
-import { notifySessionInvalidated } from '@/lib/sessionInvalidation';
+import {
+  isUserSessionActive,
+  notifySessionInvalidated,
+  setUserSessionActive,
+} from '@/lib/sessionInvalidation';
 
 const api = axios.create({
   baseURL: getApiBaseUrl(),
@@ -25,11 +29,14 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      await SecureStore.deleteItemAsync('auth_token');
       const silent = Boolean(error.config?.authSilentInvalidation);
-      if (!silent) {
+      const showSessionEndedAlert = !silent && isUserSessionActive();
+      await SecureStore.deleteItemAsync('auth_token');
+      if (showSessionEndedAlert) {
+        // Backend may send { code: "SESSION_REVOKED" } when this device was superseded (EnsureMobileSessionIsActive).
         notifySessionInvalidated();
       }
+      setUserSessionActive(false);
     }
     return Promise.reject(error);
   }

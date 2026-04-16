@@ -30,7 +30,7 @@ export async function postRegister(
 }
 
 export async function postLogout(): Promise<void> {
-  await api.post('/logout');
+  await api.post('/logout', {}, { authSilentInvalidation: true });
 }
 
 export async function postRequestAccountDeletion(password: string): Promise<void> {

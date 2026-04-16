@@ -1,5 +1,9 @@
 {
   "common": {
+    "photoLoadFailed": "No se pudo cargar la imagen",
+    "photoLoadFailedTechnical": "Mensaje del cargador / sistema (copia para soporte):",
+    "photoLoadFailedUrlLabel": "URL solicitada:",
+    "photoLoadFailedApiOrigin": "Origen API de la app (las URLs de fotos se arman con esto):",
     "save": "Guardar",
     "cancel": "Cancelar",
     "add": "Agregar",
@@ -100,6 +104,9 @@
     "settingsNotificationsSection": "Recordatorios",
     "settingsNotificationsTitle": "Notificaciones push",
     "settingsNotificationsHint": "Al crear o editar una cita puedes activar un recordatorio entre 5 y 120 minutos antes de la hora de la cita. Para recibirlo, permite las notificaciones de MIDE en los ajustes de tu tel\u00e9fono. El aviso lo env\u00eda nuestro servidor en el momento indicado.",
+    "settingsDeveloperSection": "Diagn\u00f3stico",
+    "testApiConnection": "Probar conexi\u00f3n API",
+    "developerFlagsSnapshot": "Flags del servidor para esta cuenta (copia para soporte):",
     "settingsDataSection": "Tus datos",
     "settingsDataHint": "Tu diario (semanas, peso, s\u00edntomas, medicamentos, fotos, notas y citas) se guarda con tu cuenta en nuestros servidores. Cierra sesi\u00f3n en dispositivos compartidos si otra persona usa el tel\u00e9fono.",
     "settingsPregnancySection": "Embarazo actual",

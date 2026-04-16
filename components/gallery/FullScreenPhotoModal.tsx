@@ -1,13 +1,6 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import {
-  ActivityIndicator,
-  Image,
-  Modal,
-  Platform,
-  Pressable,
-  Text,
-  View,
-} from 'react-native';
+import { RemotePhotoImage } from '@/components/RemotePhotoImage';
+import { ActivityIndicator, Modal, Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/lib/theme';
@@ -76,12 +69,9 @@ export function FullScreenPhotoModal({
 
         <View className="flex-1 justify-center items-center">
           {photoUri ? (
-            <Image
-              source={{ uri: photoUri }}
-              className="w-full flex-1"
-              resizeMode="contain"
-              accessibilityIgnoresInvertColors
-            />
+            <View className="w-full flex-1">
+              <RemotePhotoImage uri={photoUri} recyclingKey={`viewer-${photoUri}`} contentFit="contain" />
+            </View>
           ) : null}
         </View>
 

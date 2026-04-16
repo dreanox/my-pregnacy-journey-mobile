@@ -19,6 +19,8 @@ import { useTranslation } from 'react-i18next';
 
 import { MedicalDisclaimer } from '@/components/MedicalDisclaimer';
 import { useAuth } from '@/lib/auth';
+import { showTestApiConnection } from '@/lib/featureFlags';
+import { testConnection } from '@/lib/services/connectionApi';
 import { useActivePregnancy } from '@/hooks/useActivePregnancy';
 import { STORAGE_KEYS } from '@/lib/constants/storageKeys';
 import { showError } from '@/lib/errorHelper';
@@ -37,8 +39,9 @@ export default function ProfileSettingsScreen() {
   const { t, i18n: i18nInstance } = useTranslation();
   const router = useRouter();
   const qc = useQueryClient();
-  const { clearLocalSession } = useAuth();
+  const { clearLocalSession, user } = useAuth();
   const [savingLang, setSavingLang] = useState<string | null>(null);
+  const [testingApi, setTestingApi] = useState(false);
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const pregnancyQuery = useActivePregnancy();
@@ -136,6 +139,48 @@ export default function ProfileSettingsScreen() {
         <Text className="text-[15px] text-text-primary font-medium mb-1">{t('profile.settingsNotificationsTitle')}</Text>
         <Text className="text-[14px] text-text-muted leading-5">{t('profile.settingsNotificationsHint')}</Text>
       </View>
+
+      {showTestApiConnection(user) ? (
+        <>
+          <Text className="text-[13px] font-semibold text-text-muted uppercase tracking-wide mb-2">
+            {t('profile.settingsDeveloperSection')}
+          </Text>
+          <View className="bg-card rounded-[14px] border border-border overflow-hidden mb-6">
+            <Pressable
+              onPress={async () => {
+                setTestingApi(true);
+                const result = await testConnection();
+                setTestingApi(false);
+                const titles = { ok: 'API OK', warning: 'API Warning', error: 'API Error' };
+                Alert.alert(titles[result.status], result.detail);
+              }}
+              disabled={testingApi}
+              className={`flex-row items-center justify-center gap-2 py-3.5 px-4 ${testingApi ? 'opacity-60' : 'active:opacity-90'}`}
+            >
+              {testingApi ? (
+                <ActivityIndicator color={colors.primary} size="small" />
+              ) : (
+                <>
+                  <FontAwesome name="plug" size={18} color={colors.primary} />
+                  <Text className="text-[16px] font-semibold text-primary">{t('profile.testApiConnection')}</Text>
+                </>
+              )}
+            </Pressable>
+            {(user?.is_developer || (user?.feature_flags && Object.keys(user.feature_flags).length > 0)) && (
+              <View className="border-t border-border px-3 py-3 bg-surface-muted/50">
+                <Text className="text-[11px] text-text-muted mb-1">{t('profile.developerFlagsSnapshot')}</Text>
+                <Text className="text-[10px] text-text-secondary font-mono" selectable>
+                  {JSON.stringify(
+                    { is_developer: user?.is_developer ?? false, feature_flags: user?.feature_flags ?? null },
+                    null,
+                    2
+                  )}
+                </Text>
+              </View>
+            )}
+          </View>
+        </>
+      ) : null}
 
       <Text className="text-[13px] font-semibold text-text-muted uppercase tracking-wide mb-2">
         {t('profile.settingsDataSection')}

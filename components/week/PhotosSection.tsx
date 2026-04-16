@@ -1,10 +1,10 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
+import { RemotePhotoImage } from '@/components/RemotePhotoImage';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
   ScrollView,
   Text,
@@ -123,7 +123,7 @@ export function PhotosSection({ entry, weekEntryRouteId, readOnly = false }: Pho
           return (
           <View key={p.id} className="w-[100px] h-[100px] rounded-[10px] mr-2.5 overflow-hidden bg-border">
             {photoUri ? (
-              <Image source={{ uri: photoUri }} className="w-full h-full" resizeMode="cover" />
+              <RemotePhotoImage uri={photoUri} recyclingKey={`week-photo-${p.id}`} contentFit="cover" />
             ) : null}
             {!readOnly && (
               <Pressable

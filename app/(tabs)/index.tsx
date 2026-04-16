@@ -1,6 +1,6 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -15,6 +15,8 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/es';
 
 import { MedicalDisclaimer } from '@/components/MedicalDisclaimer';
+import { useAuth } from '@/lib/auth';
+import { showTimelineDateDebug } from '@/lib/featureFlags';
 import { useTimeline } from '@/hooks/useTimeline';
 import { useTimelineWeekListScroll } from '@/hooks/useTimelineWeekListScroll';
 import {
@@ -27,16 +29,20 @@ import {
   calcFromLMP,
   formatGestationalWeekRange,
   getGestationalWeekRange,
+  getLiveCurrentWeek,
 } from '@/lib/gestationalWeek';
 import { colors } from '@/lib/theme';
 
 export default function TimelineScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const defaultStyles = useDefaultStyles();
   const [showNewPregnancy, setShowNewPregnancy] = useState(false);
   const [lastPeriodDate, setLastPeriodDate] = useState<string | undefined>(undefined);
   const [openingWeek, setOpeningWeek] = useState<number | null>(null);
+  const [timelineFocusNonce, setTimelineFocusNonce] = useState(0);
+  const timelineFirstFocus = useRef(true);
   const {
     loadingPregs,
     activePregnancy,
@@ -55,10 +61,15 @@ export default function TimelineScreen() {
   useFocusEffect(
     useCallback(() => {
       setOpeningWeek(null);
+      if (timelineFirstFocus.current) {
+        timelineFirstFocus.current = false;
+      } else {
+        setTimelineFocusNonce((n) => n + 1);
+      }
     }, [])
   );
 
-  const currentWeek = activePregnancy?.current_week ?? 1;
+  const currentWeek = activePregnancy ? getLiveCurrentWeek(activePregnancy) : 1;
   const allWeeks = Array.from({ length: TIMELINE_WEEK_COUNT }, (_, i) => i + 1);
   const entryMap = new Map((weekEntries ?? []).map((e) => [e.week_number, e]));
 
@@ -67,6 +78,7 @@ export default function TimelineScreen() {
     loadingEntries,
     currentWeek,
     weekListLength: allWeeks.length,
+    focusAlignNonce: timelineFocusNonce,
   });
 
   const navigatingToWeek =
@@ -127,7 +139,7 @@ export default function TimelineScreen() {
                   button_next_image: { tintColor: colors.primary },
                 }}
               />
-              {__DEV__ && (
+              {showTimelineDateDebug(user) && (
                 <Text className="text-[11px] text-text-placeholder text-center mt-1">
                   Selected: {lastPeriodDate ?? 'none'}
                 </Text>

@@ -2,7 +2,7 @@
   "expo": {
     "name": "MIDE",
     "slug": "mide",
-    "version": "1.0.2",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mide",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mide.app",
-      "buildNumber": "3",
+      "buildNumber": "5",
       "infoPlist": {
         "NSCameraUsageDescription": "MIDE needs camera access to capture belly photos.",
         "NSPhotoLibraryUsageDescription": "MIDE needs photo library access to save and pick belly photos.",
@@ -25,7 +25,7 @@
       }
     },
     "android": {
-      "versionCode": 3,
+      "versionCode": 5,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FFF0F5"
@@ -64,7 +64,8 @@
       "eas": {
         "projectId": "5ae3bf58-2395-402c-b562-67176bf0979d"
       },
-      "router": {}
+      "router": {},
+      "showLoginApiTest": false
     },
     "owner": "drakgengard"
   }

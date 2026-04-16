@@ -7,6 +7,21 @@ import { TIMELINE_WEEK_COUNT } from '@/lib/constants/timeline';
 import { parseCalendarDateFromApi } from '@/lib/date/apiDates';
 import type { Pregnancy } from '@/lib/types';
 
+/**
+ * Current gestational week from stored dates (FUM or derived from due date), using today's date.
+ * Falls back to `pregnancy.current_week` when no LMP/EDD available.
+ */
+export function getLiveCurrentWeek(pregnancy: Pregnancy): number {
+  const lmp = getLmpDay(pregnancy);
+  if (!lmp) {
+    return Math.min(TIMELINE_WEEK_COUNT, Math.max(1, pregnancy.current_week));
+  }
+  return Math.max(
+    1,
+    Math.min(TIMELINE_WEEK_COUNT, Math.floor(dayjs().diff(lmp, 'day') / 7) + 1)
+  );
+}
+
 /** From LMP string (YYYY-MM-DD): EDD (Naegele +280d) and current gestational week (1…TIMELINE_WEEK_COUNT) as used on the timeline. */
 export function calcFromLMP(lmp: string) {
   const d = parseCalendarDateFromApi(lmp) ?? dayjs(lmp);

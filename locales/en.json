@@ -1,5 +1,9 @@
 {
   "common": {
+    "photoLoadFailed": "Could not load image",
+    "photoLoadFailedTechnical": "Loader / system message (copy for support):",
+    "photoLoadFailedUrlLabel": "URL requested:",
+    "photoLoadFailedApiOrigin": "App API origin (storage URLs are built from this):",
     "save": "Save",
     "cancel": "Cancel",
     "add": "Add",
@@ -100,6 +104,9 @@
     "settingsNotificationsSection": "Reminders",
     "settingsNotificationsTitle": "Push notifications",
     "settingsNotificationsHint": "When you create or edit an appointment you can turn on a reminder between 5 and 120 minutes before the appointment time. To receive it, allow notifications for MIDE in your device settings. Our server sends the alert at the scheduled time.",
+    "settingsDeveloperSection": "Diagnostics",
+    "testApiConnection": "Test API connection",
+    "developerFlagsSnapshot": "Server flags for this account (copy for support):",
     "settingsDataSection": "Your data",
     "settingsDataHint": "Your journal (weeks, weight, symptoms, medications, photos, notes, and appointments) is saved with your account on our servers. Sign out on shared devices if someone else uses the phone.",
     "settingsPregnancySection": "Current pregnancy",

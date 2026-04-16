@@ -4,6 +4,22 @@ function normalizeStorageRelativePath(p: string): string {
   return p.replace(/\\/g, '/').replace(/^\/+/, '');
 }
 
+/** Encode each path segment for URLs (spaces, unicode file names) without double-encoding slashes. */
+function encodeStoragePathForUrl(rel: string): string {
+  const norm = normalizeStorageRelativePath(rel);
+  if (!norm) return '';
+  return norm
+    .split('/')
+    .map((seg) => {
+      try {
+        return encodeURIComponent(decodeURIComponent(seg));
+      } catch {
+        return encodeURIComponent(seg);
+      }
+    })
+    .join('/');
+}
+
 /**
  * Relative path inside Laravel `public/storage` (e.g. photos/1/3/abc.jpg).
  */
@@ -26,9 +42,9 @@ function storagePathFromPhoto(photo: { url?: string | null; path?: string | null
 }
 
 /**
- * Laravel returns `url` from `Storage::disk(...)->url()` using APP_URL (often http:// on the server).
- * iOS ATS blocks cleartext HTTP, so images appear grey even though files exist.
- * For the `public` disk we always build the client-visible URL from `getApiOrigin()` + `/storage/` + `path`.
+ * Laravel returns `url` from `Storage::disk(...)->url()` using APP_URL.
+ * For the `public` disk we build the client URL from `getApiOrigin()` + encoded `/storage/` + `path`
+ * so iOS always hits the same HTTPS host as the API and special characters in filenames work.
  */
 export function resolvePhotoDisplayUrl(photo: {
   url?: string | null;
@@ -36,12 +52,17 @@ export function resolvePhotoDisplayUrl(photo: {
   disk?: string | null;
 }): string | undefined {
   const origin = getApiOrigin().replace(/\/$/, '');
-  const disk = photo.disk ?? 'public';
+  const diskNorm = String(photo.disk ?? 'public')
+    .trim()
+    .toLowerCase();
 
-  if (disk === 'public') {
+  if (diskNorm === 'public') {
     const rel = storagePathFromPhoto(photo);
     if (rel) {
-      return `${origin}/storage/${rel}`;
+      const encoded = encodeStoragePathForUrl(rel);
+      if (encoded) {
+        return `${origin}/storage/${encoded}`;
+      }
     }
   }
 
@@ -55,7 +76,6 @@ export function resolvePhotoDisplayUrl(photo: {
         u.port = o.port;
         return u.toString();
       }
-      // Same host as API but server emitted http — upgrade for iOS ATS when app uses https
       if (origin.startsWith('https:') && u.protocol === 'http:') {
         const o = new URL(origin);
         if (u.hostname === o.hostname && (u.port || '') === (o.port || '')) {
