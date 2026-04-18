@@ -50,6 +50,7 @@ export function useTimelineWeekListScroll(options: {
       weekListRef.current?.scrollToIndex({
         index,
         viewPosition: 0,
+        viewOffset: 8,
         animated: true,
       });
     };
@@ -60,15 +61,6 @@ export function useTimelineWeekListScroll(options: {
       });
     });
   }, [activePregnancy, loadingEntries, currentWeek, weekListLength, focusAlignNonce]);
-
-  const getWeekItemLayout = useCallback(
-    (_: ArrayLike<number> | null | undefined, index: number) => ({
-      length: TIMELINE_WEEK_ROW_ESTIMATED_LENGTH,
-      offset: TIMELINE_LIST_CONTENT_PADDING_TOP + index * TIMELINE_WEEK_ROW_ESTIMATED_LENGTH,
-      index,
-    }),
-    []
-  );
 
   const onScrollToWeekIndexFailed = useCallback(
     (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
@@ -82,5 +74,5 @@ export function useTimelineWeekListScroll(options: {
     []
   );
 
-  return { weekListRef, getWeekItemLayout, onScrollToWeekIndexFailed };
+  return { weekListRef, onScrollToWeekIndexFailed };
 }

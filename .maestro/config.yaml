@@ -1,0 +1,11 @@
+# Maestro workspace — from mobile/: npm run maestro:test
+# Requires `maestro` on PATH (CLI). Maestro Studio install dir (e.g. ...\Maestro Studio\) is the GUI app only — no maestro.bat there; install CLI: https://docs.maestro.dev/maestro-cli/how-to-install-maestro-cli
+# Use a dev build or release with appId com.mide.app (not Expo Go — different id).
+# timeline_week_list needs logged-in user + active pregnancy or it will time out.
+# https://maestro.mobile.dev/reference/workspace-configuration
+
+flows:
+  - flows/*.yaml
+
+executionOrder:
+  continueOnFailure: false

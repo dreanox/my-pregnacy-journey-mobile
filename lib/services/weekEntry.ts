@@ -69,16 +69,27 @@ export async function putWeekEntrySymptoms(
   await api.put(`/week-entries/${weekEntryId}/symptoms`, { symptoms });
 }
 
-export async function postWeekNote(weekEntryId: number, content: string): Promise<void> {
-  await api.post(`/week-entries/${weekEntryId}/notes`, { content });
+export async function postWeekNote(
+  weekEntryId: number,
+  content: string,
+  photoIds?: number[]
+): Promise<void> {
+  await api.post(`/week-entries/${weekEntryId}/notes`, {
+    content,
+    ...(photoIds !== undefined ? { photo_ids: photoIds } : {}),
+  });
 }
 
 export async function putWeekNote(
   weekEntryId: number,
   noteId: number,
-  content: string
+  content: string,
+  photoIds?: number[]
 ): Promise<void> {
-  await api.put(`/week-entries/${weekEntryId}/notes/${noteId}`, { content });
+  await api.put(`/week-entries/${weekEntryId}/notes/${noteId}`, {
+    content,
+    ...(photoIds !== undefined ? { photo_ids: photoIds } : {}),
+  });
 }
 
 export async function deleteWeekNote(weekEntryId: number, noteId: number): Promise<void> {

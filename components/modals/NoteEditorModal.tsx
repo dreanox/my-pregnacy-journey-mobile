@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -12,6 +13,8 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import dayjs from 'dayjs';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import { CharacterLimitNotice } from '@/components/CharacterLimitNotice';
 import { colors } from '@/lib/theme';
@@ -32,6 +35,8 @@ export type NoteEditorModalProps = {
   canSave: boolean;
   cancelLabel: string;
   saveLabel: string;
+  insertDateLabel: string;
+  locale: string;
 };
 
 export function NoteEditorModal({
@@ -49,11 +54,28 @@ export function NoteEditorModal({
   canSave,
   cancelLabel,
   saveLabel,
+  insertDateLabel,
+  locale,
 }: NoteEditorModalProps) {
   const insets = useSafeAreaInsets();
   const noteEditorMinHeight = Math.max(320, Dimensions.get('window').height * 0.65);
   const modalInsetTop =
     insets.top > 0 ? insets.top : Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
+
+  const inputRef = useRef<TextInput>(null);
+  const selectionRef = useRef({ start: 0, end: 0 });
+
+  const handleInsertDate = () => {
+    const fmt = locale.startsWith('es') ? 'DD/MM/YYYY HH:mm' : 'MM/DD/YYYY HH:mm';
+    const dateStr = dayjs().format(fmt);
+    const { start, end } = selectionRef.current;
+    const newText = draft.slice(0, start) + dateStr + draft.slice(end);
+    onChangeDraft(newText);
+    const newPos = start + dateStr.length;
+    setTimeout(() => {
+      inputRef.current?.setNativeProps({ selection: { start: newPos, end: newPos } });
+    }, 10);
+  };
 
   return (
     <Modal
@@ -96,6 +118,17 @@ export function NoteEditorModal({
               )}
             </Pressable>
           </View>
+
+          <View className="px-4 py-2 border-b border-border flex-row">
+            <Pressable
+              onPress={handleInsertDate}
+              className="flex-row items-center gap-1.5 bg-primary-soft px-3 py-1.5 rounded-full active:opacity-70"
+            >
+              <FontAwesome name="calendar-o" size={13} color={colors.primary} />
+              <Text className="text-[13px] font-semibold text-primary">{insertDateLabel}</Text>
+            </Pressable>
+          </View>
+
           <ScrollView
             className="flex-1"
             contentContainerClassName="grow pb-6"
@@ -103,6 +136,7 @@ export function NoteEditorModal({
             keyboardDismissMode="interactive"
           >
             <TextInput
+              ref={inputRef}
               className="px-4 py-4 text-[16px] text-text-primary"
               style={{ minHeight: noteEditorMinHeight, textAlignVertical: 'top' }}
               multiline
@@ -111,6 +145,7 @@ export function NoteEditorModal({
               value={draft}
               onChangeText={onChangeDraft}
               maxLength={maxLength}
+              onSelectionChange={(e) => { selectionRef.current = e.nativeEvent.selection; }}
             />
             {maxLength != null ? (
               <View className="px-4 pb-2">

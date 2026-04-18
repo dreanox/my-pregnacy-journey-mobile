@@ -24,7 +24,7 @@ export type NotesSectionProps = {
 };
 
 export function NotesSection({ entry, weekEntryRouteId, readOnly = false }: NotesSectionProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const invalidate = useInvalidateWeekEntry(weekEntryRouteId);
   const [noteModalMode, setNoteModalMode] = useState<null | 'add' | 'edit'>(null);
   const [noteDraft, setNoteDraft] = useState('');
@@ -177,6 +177,8 @@ export function NotesSection({ entry, weekEntryRouteId, readOnly = false }: Note
         canSave={canSaveNote}
         cancelLabel={t('common.cancel')}
         saveLabel={t('common.save')}
+        insertDateLabel={t('week.noteInsertDate')}
+        locale={i18n.language}
       />
     </View>
   );

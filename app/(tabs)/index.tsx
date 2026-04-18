@@ -73,7 +73,7 @@ export default function TimelineScreen() {
   const allWeeks = Array.from({ length: TIMELINE_WEEK_COUNT }, (_, i) => i + 1);
   const entryMap = new Map((weekEntries ?? []).map((e) => [e.week_number, e]));
 
-  const { weekListRef, getWeekItemLayout, onScrollToWeekIndexFailed } = useTimelineWeekListScroll({
+  const { weekListRef, onScrollToWeekIndexFailed } = useTimelineWeekListScroll({
     activePregnancy,
     loadingEntries,
     currentWeek,
@@ -183,18 +183,32 @@ export default function TimelineScreen() {
     );
   }
 
+  const formattedDueDate = activePregnancy.due_date
+    ? (parseCalendarDateFromApi(activePregnancy.due_date)?.format('DD/MM/YYYY') ??
+        activePregnancy.due_date)
+    : null;
+
   return (
     <View className="flex-1 bg-surface">
       <View className="bg-primary pt-4 pb-5 px-5 rounded-b-3xl">
         <Text className="text-[28px] font-bold text-white">{t('timeline.week', { number: currentWeek })}</Text>
-        {activePregnancy.due_date && (
-          <Text className="text-[14px] text-white-translucent mt-1">
-            {t('timeline.dueDate', {
-              date:
-                parseCalendarDateFromApi(activePregnancy.due_date)?.format('DD/MM/YYYY') ??
-                activePregnancy.due_date,
-            })}
-          </Text>
+        {formattedDueDate && (
+          <View
+            className="mt-3 flex-row items-center gap-3 self-stretch rounded-2xl px-3.5 py-3"
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.22)',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.38)',
+            }}
+          >
+            <FontAwesome name="calendar-check-o" size={22} color={colors.white} />
+            <View className="flex-1 min-w-0">
+              <Text className="text-[12px] font-semibold text-white-translucent uppercase tracking-wide">
+                {t('timeline.dueDateLabel')}
+              </Text>
+              <Text className="text-[22px] font-bold text-white leading-tight mt-0.5">{formattedDueDate}</Text>
+            </View>
+          </View>
         )}
         <Pressable
           onPress={() => router.push('/profile/settings')}
@@ -211,11 +225,11 @@ export default function TimelineScreen() {
         <ActivityIndicator className="mt-8" size="large" color={colors.primary} />
       ) : (
         <FlatList
+          testID="timeline-week-list"
           ref={weekListRef}
           data={allWeeks}
           keyExtractor={(item) => item.toString()}
           contentContainerClassName="p-4 pb-8"
-          getItemLayout={getWeekItemLayout}
           onScrollToIndexFailed={onScrollToWeekIndexFailed}
           initialNumToRender={TIMELINE_FLATLIST_INITIAL_NUM_RENDER}
           windowSize={TIMELINE_FLATLIST_WINDOW_SIZE}

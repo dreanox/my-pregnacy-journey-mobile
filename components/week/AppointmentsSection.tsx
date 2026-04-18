@@ -34,9 +34,11 @@ export type AppointmentsSectionProps = {
   entry: WeekEntry;
   weekEntryRouteId: string;
   readOnly?: boolean;
+  weekStartDate?: string;
+  weekEndDate?: string;
 };
 
-export function AppointmentsSection({ entry, weekEntryRouteId, readOnly = false }: AppointmentsSectionProps) {
+export function AppointmentsSection({ entry, weekEntryRouteId, readOnly = false, weekStartDate, weekEndDate }: AppointmentsSectionProps) {
   const { t, i18n } = useTranslation();
   const qc = useQueryClient();
   const invalidate = useInvalidateWeekEntry(weekEntryRouteId);
@@ -61,7 +63,8 @@ export function AppointmentsSection({ entry, weekEntryRouteId, readOnly = false 
   const openAdd = () => {
     setModalMode('add');
     setEditingApptId(null);
-    setAppointmentDateTime(dayjs().format('YYYY-MM-DD HH:mm:ss'));
+    const initialDate = weekStartDate ? dayjs(weekStartDate) : dayjs();
+    setAppointmentDateTime(initialDate.format('YYYY-MM-DD HH:mm:ss'));
     setDoctor('');
     setNotes('');
     setReminderMinutesBefore(null);
@@ -252,6 +255,8 @@ export function AppointmentsSection({ entry, weekEntryRouteId, readOnly = false 
         onChangeNotes={setNotes}
         onSubmit={submit}
         onClose={closeModal}
+        weekStartDate={weekStartDate}
+        weekEndDate={weekEndDate}
         title={modalMode === 'edit' ? t('week.editAppointment') : t('week.newAppointment')}
         dateTimeLabel={t('week.appointmentDateTime')}
         doctorPlaceholder={t('week.doctorOptional')}

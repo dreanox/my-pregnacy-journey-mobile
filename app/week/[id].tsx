@@ -20,6 +20,7 @@ import {
 } from '@/components/week';
 import { useActivePregnancyId } from '@/hooks/useActivePregnancy';
 import { useWeekEntry } from '@/hooks/useWeekEntry';
+import { getGestationalWeekRange } from '@/lib/gestationalWeek';
 import { colors } from '@/lib/theme';
 
 function firstParam(v: string | string[] | undefined): string | undefined {
@@ -87,6 +88,7 @@ export default function WeekDetailScreen() {
   }
 
   const readOnly = activePregnancy == null || entry.pregnancy_id !== activePregnancy.id;
+  const weekRange = activePregnancy ? getGestationalWeekRange(entry.week_number, activePregnancy) : null;
 
   return (
     <>
@@ -121,7 +123,7 @@ export default function WeekDetailScreen() {
           <SymptomsSection entry={entry} weekEntryRouteId={id} readOnly={readOnly} />
           <MedicationsSection entry={entry} weekEntryRouteId={id} readOnly={readOnly} />
           <PhotosSection entry={entry} weekEntryRouteId={id} readOnly={readOnly} />
-          <AppointmentsSection entry={entry} weekEntryRouteId={id} readOnly={readOnly} />
+          <AppointmentsSection entry={entry} weekEntryRouteId={id} readOnly={readOnly} weekStartDate={weekRange?.start.format('YYYY-MM-DD')} weekEndDate={weekRange?.end.format('YYYY-MM-DD')} />
         </ScrollView>
       </KeyboardAvoidingView>
     </>

@@ -64,6 +64,7 @@
   "timeline": {
     "week": "Semana {{number}}",
     "dueDate": "Fecha probable: {{date}}",
+    "dueDateLabel": "Fecha probable",
     "startJourney": "Comienza Tu Viaje",
     "trackMoments": "Registra cada hermoso momento",
     "beginTracking": "Comenzar",
@@ -187,6 +188,8 @@
     "addNote": "Agregar Nota",
     "editNote": "Editar nota",
     "notePlaceholder": "\u00bfC\u00f3mo te sientes hoy?",
+    "noteInsertDate": "Insertar fecha",
+    "noteAttachPhotos": "Fotos adjuntas",
     "symptoms": "S\u00edntomas",
     "addCustomSymptom": "Agregar s\u00edntoma personalizado",
     "noSymptoms": "No se registraron s\u00edntomas",

@@ -19,6 +19,7 @@ import { useAuth } from '@/lib/auth';
 import { showError } from '@/lib/errorHelper';
 import { shouldShowLoginScreenApiTest } from '@/lib/featureFlags';
 import { testConnection } from '@/lib/services/connectionApi';
+import * as Sentry from '@sentry/react-native';
 import { colors } from '@/lib/theme';
 import { isValidAuthEmail } from '@/lib/validators/auth';
 
@@ -155,6 +156,16 @@ export default function LoginScreen() {
                 <Text className="text-primary text-[16px] font-semibold">{t('profile.testApiConnection')}</Text>
               </>
             )}
+          </Pressable>
+        )}
+
+        {shouldShowLoginScreenApiTest() && (
+          <Pressable
+            className="mt-[16px] flex-row gap-[10px] justify-center border-2 border-red-400 rounded-[12px] py-[14px] items-center bg-transparent"
+            onPress={() => Sentry.captureException(new Error('First error'))}
+          >
+            <FontAwesome name="bug" size={18} color="#f87171" />
+            <Text className="text-red-400 text-[16px] font-semibold">Test Sentry</Text>
           </Pressable>
         )}
       </View>

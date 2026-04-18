@@ -64,6 +64,7 @@
   "timeline": {
     "week": "Week {{number}}",
     "dueDate": "Due: {{date}}",
+    "dueDateLabel": "Due date",
     "startJourney": "Start Your Journey",
     "trackMoments": "Track every beautiful moment",
     "beginTracking": "Begin Tracking",
@@ -187,6 +188,8 @@
     "addNote": "Add Note",
     "editNote": "Edit note",
     "notePlaceholder": "How are you feeling today?",
+    "noteInsertDate": "Insert date",
+    "noteAttachPhotos": "Attached photos",
     "symptoms": "Symptoms",
     "addCustomSymptom": "Add custom symptom",
     "noSymptoms": "No symptoms recorded",

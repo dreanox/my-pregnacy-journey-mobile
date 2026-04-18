@@ -4,7 +4,7 @@
 export const TIMELINE_LIST_CONTENT_PADDING_TOP = 16;
 
 /** Estimated row height (card + `mb-2`) for FlatList `getItemLayout` / `scrollToIndex`. */
-export const TIMELINE_WEEK_ROW_ESTIMATED_LENGTH = 118;
+export const TIMELINE_WEEK_ROW_ESTIMATED_LENGTH = 84;
 
 /** Weeks 1..N on the pregnancy timeline (inclusive cap). */
 export const TIMELINE_WEEK_COUNT = 42;

@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 
 export function getAppVersion(): string {
-  return Constants.expoConfig?.version ?? '1.0.3';
+  return Constants.expoConfig?.version ?? '1.0.5';
 }
 
-export const DEVELOPER_NAME = 'SpiritWords';
+export const DEVELOPER_NAME = 'Cristino Zamora';

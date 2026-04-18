@@ -1,0 +1,14 @@
+# Timeline week list (needs login + active pregnancy).
+# testID timeline-week-list on FlatList in app/(tabs)/index.tsx
+
+appId: com.mide.app
+name: Timeline week list visible
+tags:
+  - timeline
+  - e2e
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "timeline-week-list"
+    timeout: 120000

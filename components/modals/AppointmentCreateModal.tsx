@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   InputAccessoryView,
@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import DateTimePicker, { type DateType, useDefaultStyles } from 'react-native-ui-datepicker';
+import DateTimePicker, { type CalendarDay, type DateType, useDefaultStyles } from 'react-native-ui-datepicker';
 import dayjs from 'dayjs';
 
 import { CharacterLimitNotice } from '@/components/CharacterLimitNotice';
@@ -57,6 +57,8 @@ export type AppointmentCreateModalProps = {
   reminderHint: string;
   /** Texto ya interpolado (ej. t(..., { minutes })). */
   reminderMinutesSummary: string;
+  weekStartDate?: string;
+  weekEndDate?: string;
 };
 
 export function AppointmentCreateModal({
@@ -85,6 +87,8 @@ export function AppointmentCreateModal({
   reminderSwitchLabel,
   reminderHint,
   reminderMinutesSummary,
+  weekStartDate,
+  weekEndDate,
 }: AppointmentCreateModalProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -123,6 +127,31 @@ export function AppointmentCreateModal({
   );
 
   const pickerLocale = locale.startsWith('es') ? 'es' : 'en';
+
+  const renderDay = useCallback((day: CalendarDay) => {
+    const inRange =
+      weekStartDate && weekEndDate
+        ? !dayjs(day.date).isBefore(weekStartDate, 'day') && !dayjs(day.date).isAfter(weekEndDate, 'day')
+        : false;
+    const textColor = day.isSelected
+      ? colors.white
+      : inRange
+        ? colors.primary
+        : day.isToday
+          ? colors.primary
+          : day.isCurrentMonth
+            ? colors.textMuted
+            : colors.iconMuted;
+    const fontWeight = inRange || day.isSelected ? ('700' as const) : ('400' as const);
+    return (
+      <>
+        {inRange && !day.isSelected && (
+          <View style={{ position: 'absolute', top: 3, left: 3, right: 3, bottom: 3, backgroundColor: colors.primarySoft, borderRadius: 8 }} />
+        )}
+        <Text style={{ color: textColor, fontWeight, fontSize: 14 }}>{day.text}</Text>
+      </>
+    );
+  }, [weekStartDate, weekEndDate]);
 
   const applyDatePart = (picked: DateType) => {
     if (picked == null) {
@@ -231,6 +260,7 @@ export function AppointmentCreateModal({
                     timePicker={false}
                     onChange={({ date }) => applyDatePart(date)}
                     styles={pickerStyles}
+                    components={{ Day: renderDay }}
                   />
                 ) : (
                   <DateTimePicker

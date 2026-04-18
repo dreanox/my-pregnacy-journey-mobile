@@ -34,6 +34,7 @@ export interface Note {
   week_entry_id: number;
   content: string;
   created_at: string;
+  photos?: Photo[];
 }
 
 export interface WeekEntry {

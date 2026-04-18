@@ -1,0 +1,9 @@
+# Cold start: launches the app (no UI assertions).
+# Requires: com.mide.app installed (e.g. npx expo run:android), emulator/device + adb.
+
+appId: com.mide.app
+name: Smoke - app opens
+tags:
+  - smoke
+---
+- launchApp
